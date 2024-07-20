@@ -18,3 +18,9 @@ python-dotenv
 PyYAML
 plotly
 plotly-express
+huggingface_hub
+langchain-text-splitters
+datasets
+accelerate
+bitsandbytes
+sentence-transformers  

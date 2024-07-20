@@ -46,4 +46,7 @@ This project intended to be used LLM Model for the purpose of assisting the user
 3. add your google api key to .env file  for enviroment variables 
 
 ### Run Application
-1. running steamlit run apps.py for develop the application
+1. For Development version:
+    go to dev folder run  
+2. For Application GUI version: 
+    running steamlit run apps.py for develop the application
