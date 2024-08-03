@@ -1,0 +1,167 @@
+{
+    "os": "Linux-6.5.0-44-generic-x86_64-with-glibc2.35",
+    "python": "3.10.12",
+    "heartbeatAt": "2024-08-03T12:16:52.293004",
+    "startedAt": "2024-08-03T12:16:51.592117",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "<python with no main file>",
+    "codePathLocal": null,
+    "git": {
+        "remote": "git@github.com:johnsonhk88/AI-Bank-Statement-Document-Automation-By-LLM-And-Personal-Finanical-Analysis-Prediction.git",
+        "commit": "f20dbfc50661d62a48213fb8d09c680ef3fed29b"
+    },
+    "email": "johnsonhk88@gmail.com",
+    "root": "/media/johnsonhk88/Big-Data-Disk/ai-bank-statement-document-automation-by-llm-and-personal",
+    "host": "johnsonhk88-Z690-AORUS-ELITE",
+    "username": "johnsonhk88",
+    "executable": "/bin/python3",
+    "cpu_count": 16,
+    "cpu_count_logical": 24,
+    "cpu_freq": {
+        "current": 4319.929291666666,
+        "min": 800.0,
+        "max": 4716.666666666667
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.061,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4848.85,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 800.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4896.947,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4793.056,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.278,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5100.0
+        },
+        {
+            "current": 4899.905,
+            "min": 800.0,
+            "max": 5200.0
+        },
+        {
+            "current": 4866.435,
+            "min": 800.0,
+            "max": 5200.0
+        },
+        {
+            "current": 4873.915,
+            "min": 800.0,
+            "max": 5200.0
+        },
+        {
+            "current": 4900.0,
+            "min": 800.0,
+            "max": 5200.0
+        },
+        {
+            "current": 3699.952,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3699.702,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3700.495,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3700.267,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3698.174,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3702.388,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3696.913,
+            "min": 800.0,
+            "max": 3900.0
+        },
+        {
+            "current": 3700.965,
+            "min": 800.0,
+            "max": 3900.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 937.3305015563965,
+            "used": 655.0425224304199
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 3080",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3080",
+            "memory_total": 12884901888
+        }
+    ],
+    "memory": {
+        "total": 31.104156494140625
+    }
+}

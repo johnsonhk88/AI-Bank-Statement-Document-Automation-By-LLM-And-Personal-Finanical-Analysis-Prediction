@@ -23,4 +23,7 @@ langchain-text-splitters
 datasets
 accelerate
 bitsandbytes
-sentence-transformers  
+sentence-transformers
+
+#new version of langchain
+langchain-chroma
