@@ -1,4 +1,4 @@
-# AI-Bank Statement document aution by LLM and Personal financial analysis
+# AI-Bank Statement document automatic by LLM and Personal financial analysis
 
 
 ### Introdctions
@@ -8,16 +8,32 @@ Every Month, we obtain a lot bank statement in pdf format document. We intend to
 This project intended to be used LLM Model for the purpose of assisting the user obtain fully record from bank statement by RAG technique. Convert the bank statement from unstructured document format into structured format. Store the records into database. Use LLM nature language to query the bank statement and give us the report. 
 
 
+This project mainly can divide into three main parts: 
+1. Data Extraction model for PDF file complex format 
+2. Embedding model + Vector Database for Store PDF Retrival document
+3. LLM Model + RAG technique from data retrieved from database with natural language queries by user 
+
 ### Technology use in this project
-1. LLM Model 
-- try to use different open LLM models (e.g. LLama3, gemma 2) , prefer use local open LLM models(planning inference LLM model at offline in local machine)
+1. Unstructure Document Preprocssing
+- Because the input document complexity, include table, image (chart), I will use several AI model  like OCR , commputer vision model, Vision transformer , layout transformer, Embedding model to extract and analysis the document content from bank statement.
+- Complex layout/Context format Analysis by ML model
+- use advance rule base model or Machine learning  model :
+  - group and reorganize the data into a user-friendly format. (no experience to build rule to graoup data)
+  - Identify common denominators and create headers for each group. (no experence)
+  - Display only the differences between similar items (e.g., window sizes, owners) as line items below each header. 
+  - Automate the process using AI, enabling the system to self-learn and understand the data structure.  
+  - Extract relevant data from PDFs with different layouts and formats.
+
+
 
 2. retrieval augmented generation (RAG) with langChain  
+- use Embedding model with VectorDB to Retrieve data values by query
 - using training dataset for improvement the Text summaration task for conference speakers
 - using Advance RAG technique improve retrieval accuracy (e.g. re-ranking, query extensions, auto-merging)
 
-3. Unstructure Document Preprocssing
-- Because the input document complexity, include table, image (chart),  use like OCR, Vision transformer to extract the document content from bank statement. 
+3. LLM Model 
+- try to use different open LLM models (e.g. LLama3, gemma 2) , prefer use local open LLM models(planning inference LLM model at offline in local machine)
+- LLM model use for user-friendly documentation queries and retrieval information interface with natural language
 
 4. LLM Model evaluation
 - use truLens or W&B framework for evaluation and debug LLM performance
@@ -47,6 +63,6 @@ This project intended to be used LLM Model for the purpose of assisting the user
 
 ### Run Application
 1. For Development version:
-    go to dev folder run  
+    go to dev folder run jupyter notebook code for development new model/techique 
 2. For Application GUI version: 
     running steamlit run apps.py for develop the application
