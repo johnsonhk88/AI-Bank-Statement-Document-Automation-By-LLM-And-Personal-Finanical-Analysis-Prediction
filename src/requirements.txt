@@ -24,6 +24,8 @@ datasets
 accelerate
 bitsandbytes
 sentence-transformers
+pymupdf 
+pytesseract
 
 #new version of langchain
 langchain-chroma
