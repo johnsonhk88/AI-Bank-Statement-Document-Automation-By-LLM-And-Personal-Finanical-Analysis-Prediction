@@ -26,6 +26,8 @@ bitsandbytes
 sentence-transformers
 pymupdf 
 pytesseract
+tesseract
+opencv-python
 
 #new version of langchain
 langchain-chroma

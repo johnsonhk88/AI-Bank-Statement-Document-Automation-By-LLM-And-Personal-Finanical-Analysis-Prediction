@@ -59,7 +59,8 @@ This project mainly can divide into three main parts:
 ### Installation and Setup
 1. use requirements.txt for installation package dependencies
 2. you can setup virual environment by venv 
-3. add your google api key to .env file  for enviroment variables 
+3. add your google api key to .env file  for enviroment variables
+4. install pytesseract library for ubuntu linux , please run install-pytesseract-for-linux.sh script file 
 
 ### Run Application
 1. For Development version:
