@@ -31,8 +31,8 @@ This project mainly can divide into three main parts:
 - using training dataset for improvement the Text summaration task for conference speakers
 - using Advance RAG technique improve retrieval accuracy (e.g. re-ranking, query extensions, auto-merging)
 
-3. LLM Model 
-- try to use different open LLM models (e.g. LLama3, gemma 2) , prefer use local open LLM models(planning inference LLM model at offline in local machine)
+3. LLM Model / Multi-model 
+- try to use different open LLM models / multi-model (e.g. LLama3, gemma 2) , prefer use local open LLM models(planning inference LLM model at offline in local machine)
 - LLM model use for user-friendly documentation queries and retrieval information interface with natural language
 
 4. LLM Model evaluation

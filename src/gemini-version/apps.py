@@ -25,7 +25,7 @@ from langchain_community.vectorstores import FAISS
 
 from langchain_google_genai import ChatGoogleGenerativeAI # google gemini
 from langchain.chains.question_answering import load_qa_chain # question answering chart
-from langchain.chains import RetrievalQAChain # retrieval question answering chart
+# from langchain.chains import RetrievalQAChain # retrieval question answering chart
 from langchain.prompts import PromptTemplate # prompt template
 # import langchain
 from dotenv import load_dotenv # load environment variable
