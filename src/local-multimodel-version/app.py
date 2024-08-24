@@ -43,7 +43,9 @@ from langchain.chains.question_answering import load_qa_chain # question answeri
 # from langchain.chains import RetrievalQAChain # retrieval question answering chart
 
 # from langchain.embeddings import HuggingFaceEmbeddings # huggingfaceEmbedding deprecated , please use sentencetransformers 
-from langchain_community.embeddings import HuggingFaceEmbeddings
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings # new version of huggingface embedding
+from sentence_transformers import SentenceTransformer
 from datasets import Dataset, DatasetDict, load_dataset
 
 
@@ -55,12 +57,7 @@ from dotenv import load_dotenv # load environment variable
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Device: ", device)
-if device.type == "cuda":
-    model_kwargs = {"device": "cuda"}
-    multiProcess=  False#True # 
-else:
-    model_kwargs = {"device": "cpu"}
-    multiProcess= False
+
 
 
 #load environment variable
@@ -112,11 +109,33 @@ templatePrompt2 = "Answer the user Question.\n###\n{format_instructions}\n###\nQ
 
 huggingfaceToken = os.getenv("HuggingFace") #get huggeface token from .env file
 
-def embeddingModelInit(modelName):
+print("HuggingFace Token: ", huggingfaceToken)
+
+def embeddingModelInit(modelName,  gpu=False):
     '''
     initialize embedding model
     '''
-    embeddings = HuggingFaceEmbeddings(model=modelName, model_kwargs= model_kwargs, multi_process=multiProcess)
+    global device
+    if device.type == "cuda":
+        if gpu:
+            model_kwargs = {"device": "cuda"}
+            multiProcess=  False#True # 
+        else:
+            model_kwargs = {"device": "cpu"}
+            multiProcess= False
+    else:
+        model_kwargs = {"device": "cpu"}
+        multiProcess= False
+    # embeddings = HuggingFaceEmbeddings(model=modelName, model_kwargs= model_kwargs, multi_process=multiProcess)
+    # embeddings = SentenceTransformer(modelName)
+    model_name = "sentence-transformers/all-mpnet-base-v2"
+    model_kwargs = {'device': 'cpu'}
+    encode_kwargs = {'normalize_embeddings': False}
+    embeddings = HuggingFaceEmbeddings(
+        model_name=modelName,
+        model_kwargs=model_kwargs,
+        encode_kwargs=encode_kwargs
+    )
     return embeddings
 
 
@@ -195,11 +214,12 @@ def getPDFText(pdf_docs):
 
 
 #get text chunks (split text into chunks)
-def getTextChunks(text, chunk_size=800, chunk_overlap=50):
+def getTextChunks(text, chunk_size=600, chunk_overlap=50):
     #inital Text splitter function 
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=chunk_size, 
                                                    chunk_overlap=chunk_overlap) # split text into chunks
     chunks = text_splitter.split_text(text) # split text into chunks
+    print(f"Chunks Size: {len(chunks)}")
     return chunks # return chunks
 
 
@@ -209,6 +229,11 @@ def getVectorStore(text_chunks ,model=CFG.embedModel3):
     vector_store = FAISS.from_texts(text_chunks, embedding=embeddings) # use FAISS for vector store with google gemini embedding
     vector_store.save_local("faiss_index") # save vector store
     return vector_store # return vector store
+
+def getEmbeddingEncode(query, embeddings):
+    vector = embeddings.embed_query(query)
+    print(len(vector))
+    return vector
 
 
 #get conversational chain
@@ -257,6 +282,8 @@ def user_input(user_question, model= CFG.embedModel3):
 # main function
 def main():
     model , tokenizer = LLMInit() # initial LLM model 
+    # embeddings = embeddingModelInit(CFG.embedModel3)
+    # vector = getEmbeddingEncode("Hello", embeddings)
     st.set_page_config("Chat with Multiple PDF") # set page config
     st.header("Chat with Multiple PDF using Gemini💁") #set header 
 
@@ -276,6 +303,7 @@ def main():
             with st.spinner("Processing..."): 
                 raw_text = getPDFText(pdfDocs) #
                 text_chunks = getTextChunks(raw_text)
+                print("Text Chunks size : ", len(text_chunks))
                 getVectorStore(text_chunks)
                 st.success("Done")
 

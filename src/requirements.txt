@@ -31,3 +31,4 @@ opencv-python
 
 #new version of langchain
 langchain-chroma
+langchain-huggingface
