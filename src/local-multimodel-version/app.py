@@ -9,6 +9,7 @@ Open LLM
 
 import streamlit as st  # import stremlit
 from  PyPDF2 import PdfReader
+import pymupdf
 import os, json, time, gc
 
 
@@ -106,10 +107,31 @@ templatePrompt1 = """Question: {question}.\nOnly require given final result in J
             """
 templatePrompt2 = "Answer the user Question.\n###\n{format_instructions}\n###\nQuestion: {query}\n"
 
+promptTemplate3 = """
+    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
+    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
+    Context:\n {context}?\n
+    Question: \n{question}\n
+
+    Answer:
+    """
+
+templatePrompt4 = """
+Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in 
+provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
+CONTEXT: {context}
+Provide answer and rethinking multiple step by step from Question: {question}
+"""
+templatePrompt5 = """
+you are act as Mathematician, solve the math problem reasonable and logical from given question follow the requirement as below:
+CONTEXT: {context}
+Provide answer and rethinking multiple step by step from Question: {question}
+Only Output answer in json format with key "answer" and "explanation" 
+"""
 
 huggingfaceToken = os.getenv("HuggingFace") #get huggeface token from .env file
 
-print("HuggingFace Token: ", huggingfaceToken)
+# print("HuggingFace Token: ", huggingfaceToken)
 
 def embeddingModelInit(modelName,  gpu=False):
     '''
@@ -200,18 +222,58 @@ def generateResponse(query,  model, tokenizer,  maxOutToken = 512):
                              )
     return tokenizer.decode(response[0][len(inputIds["input_ids"]):], skip_special_tokens = True)
 
-#get pdf text
+#Extract data from multiple pdf files
 def getPDFText(pdf_docs):
     '''
-    get pdf text from pdf docs
+    get pdf text from pdf docs by PyPDF2
     '''
     text="" 
     for pdf in pdf_docs: #loop through pdf docs
+        print(pdf)
         pdf_reader= PdfReader(pdf) #read pdf file
         for page in pdf_reader.pages: # loop through pdf pages 
             text+= page.extract_text() # extract text from page and add to text variable
     return  text # return text variable
 
+
+def extractTextFromPage(page):
+    '''get text by pymupdf
+    '''
+    text = page.get_text()
+    return text
+
+def extractTableFromPage(page):
+    '''
+    extract table from page by pymupdf
+    '''
+    tabs = page.find_tables()
+    print(f"{len(tabs.tables)} found on {page}") # display number of found tables
+    for i, tab in enumerate(tabs.tables):
+        print(f"Table {i+1} : {tab.extract()}")
+    return tabs
+
+def extractImageFromPage(page):
+    image_list = page.get_images()
+    imginfo = page.get_image_info()
+    print(imginfo)
+    print(image_list)
+    return image_list
+
+def getPDFData(pdf_docs):
+    '''
+    get pdf text from pdf docs by pymupdf
+    '''
+    text="" 
+    for pdf in pdf_docs: #loop through pdf docs
+        # print("PDF file : ", type(pdf))
+        # print("PDF file : ", pdf)
+        pdf_bytes = pdf.getvalue()  # Read the PDF file into bytes
+        pdf_reader= pymupdf.open(stream=pdf_bytes, filetype="pdf") #read pdf file
+        for page in pdf_reader:# loop through pdf pages
+            print("Page: ", page)
+            text += extractTextFromPage(page) 
+            # text+= page.get_text() # extract text from page and add to text variable
+    return  text # return text variable
 
 #get text chunks (split text into chunks)
 def getTextChunks(text, chunk_size=600, chunk_overlap=50):
@@ -236,76 +298,70 @@ def getEmbeddingEncode(query, embeddings):
     return vector
 
 
-#get conversational chain
-def getConversationalChain(temperature=0.3, modelName="gemini-pro"):
-    #promptTemplate
-    promptTemplate = """
-    Answer the question as detailed as possible from the provided context, make sure to provide all the details, if the answer is not in
-    provided context just say, "answer is not available in the context", don't provide the wrong answer\n\n
-    Context:\n {context}?\n
-    Question: \n{question}\n
-
-    Answer:
-    """
-    #model
-    model=ChatGoogleGenerativeAI(model=modelName, 
-                                 temperature=temperature) # use google gemini model for conversational chain
-    
-    prompt = PromptTemplate(template = promptTemplate, 
-                            input_variables = ["context", "question"]) # use prompt template for conversational chain
-    
-    chain = load_qa_chain(model, chain_type="stuff", prompt=prompt) # load question answering chart
-
-    return chain
-
-
-# user input encode into query vector
-def user_input(user_question, model= CFG.embedModel3):
-    # embeddings = GoogleGenerativeAIEmbeddings(model = model)
-   
+def userQuery(user_question, llmModel, tokenizer, embeddModel=CFG.embedModel3):
+    # RAG retrieval model
     # loading Vector DB stored document 
-    embeddings = embeddingModelInit(model)
+    ragContext = "" # for reg context input to prompt
+    embeddings = embeddingModelInit(embeddModel) # embedding model for vector store
     new_db = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True) # load vector store
-    
-    docs = new_db.similarity_search(user_question)  # search for similar text in vector store
-
-    chain = getConversationalChain() # get conversational chain
-
-    response = chain(
-        {"input_documents":docs, "question": user_question}
-        , return_only_outputs=True)  # get response from conversational chain 
-    
-    print(response)
-    st.write("Reply: ", response["output_text"])
-
+    num_docs = 3
+    retriever  = new_db.as_retriever( 
+        search_type="mmr",  # Also test "similarity"
+        search_kwargs={"k": num_docs})
+    # docs = new_db.similarity_search(user_question)  # search for similar text in vector store
+    docs = retriever.invoke(user_question) # get response from retriever
+    # response = docs.copy()
+    print("number of document RAG Response: ", len(docs))
+    for doc in docs:
+        ragContext += doc.page_content + "\n"
+    #
+    newPrompt = PromptTemplate(template = templatePrompt4, 
+                            input_variables = ["context", "question"]) # use prompt template for conversational chain
+    finalPrmpt = newPrompt.format(
+            question=user_question,
+            context=ragContext
+        )
+    response = generateResponse(finalPrmpt, llmModel, tokenizer, maxOutToken=512)
+    st.write("Result : ", response)
 
 # main function
 def main():
     model , tokenizer = LLMInit() # initial LLM model 
+    # Test LLM model
+    # ret =generateResponse( query="What is Machine Learning?",   model=model,  tokenizer= tokenizer, maxOutToken=256)
+    # print(ret) 
     # embeddings = embeddingModelInit(CFG.embedModel3)
     # vector = getEmbeddingEncode("Hello", embeddings)
     st.set_page_config("Chat with Multiple PDF") # set page config
-    st.header("Chat with Multiple PDF using Gemini💁") #set header 
+    st.header("Chat with Multiple PDF using Open LLM") #set header 
 
+    # LLM and RAG Retrieval Query
     user_question = st.text_input("Ask a Question from PDF Files") # get user question
 
     if user_question:
-        user_input(user_question) # get user input
+        # user_input(user_question) # get user input
+        userQuery(user_question, llmModel=model, tokenizer=tokenizer) # get user query
 
 
     # sidebar
     with st.sidebar:
         st.title("Menu:") # set sidebar title
         pdfDocs = st.file_uploader("Upload your PDF Files and Click on the Submit & Process Button",
-                                    accept_multiple_files=True) # upload pdf files
+                                    accept_multiple_files=True, type=['pdf']) # upload pdf files
         # submit and process button
         if st.button("Submit & Process"):
-            with st.spinner("Processing..."): 
-                raw_text = getPDFText(pdfDocs) #
-                text_chunks = getTextChunks(raw_text)
-                print("Text Chunks size : ", len(text_chunks))
-                getVectorStore(text_chunks)
-                st.success("Done")
+            with st.spinner("Processing..."):
+                # Store PDF files docs in Vector Store
+                if pdfDocs: 
+                    # raw_text = getPDFText(pdfDocs) #
+                    raw_text = getPDFData(pdfDocs)
+                    print(f"Len of Raw Test: {len(raw_text)}")
+                    text_chunks = getTextChunks(raw_text)
+                    print("Text Chunks size : ", len(text_chunks))
+                    getVectorStore(text_chunks)
+                    st.success("Done")
+                else:
+                    print("No PDF Docs Found")
 
 
 if __name__ == "__main__":
