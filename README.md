@@ -16,7 +16,19 @@ This project mainly can divide into three main parts:
 ### Technology use in this project
 1. Unstructure Document Preprocssing
 - Because the input document complexity, include table, image (chart), I will use several AI model  like OCR , commputer vision model, Vision transformer , layout transformer, Embedding model to extract and analysis the document content from bank statement.
-- Complex layout/Context format Analysis by ML model
+- Complex layout/Context format Analysis by ML model 
+- Level 1 analysis: Document layout Analysis
+  - Use Computer vision (object detection) AI model to extract component in document content
+  - then use different AI model analysis and extract different type of components context
+  -
+- Level 2 each component context 
+  - use different AI model for extract and recognize different types of docunment components
+
+- Level 3 High level task analysis
+  - use AI model Entities 
+  - use AI model Sentiment Analysis
+  - use AI model Summarization 
+
 - use advance rule base model or Machine learning  model :
   - group and reorganize the data into a user-friendly format. (no experience to build rule to graoup data)
   - Identify common denominators and create headers for each group. (no experence)
