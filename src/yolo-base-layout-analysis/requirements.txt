@@ -1,0 +1,25 @@
+torch
+torchvision
+
+
+
+
+#object detection models
+ultralytics
+ultralyticsplus
+
+pandas
+numpy
+scipy
+scikit-learn
+matplotlib
+seaborn
+python-dotenv
+plotly
+plotly-express
+huggingface_hub
+datasets
+opencv-python
+
+
+

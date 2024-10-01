@@ -19,6 +19,9 @@ This project mainly can divide into three main parts:
 - Complex layout/Context format Analysis by ML model 
 - Level 1 analysis: Document layout Analysis
   - Use Computer vision (object detection) AI model to extract component in document content
+    - Custom Train Object ddection Model (YOLO) for Detect/recogize the Document Layout Component
+    - Detail of the Custom Train YOLO document layout detection model 
+    - see my other github project (yolo-base-doc-layout-detection) :  <https://github.com/johnsonhk88/yolo-base-doc-layout-detection> 
   - then use different AI model analysis and extract different type of components context
   -
 - Level 2 each component context 
