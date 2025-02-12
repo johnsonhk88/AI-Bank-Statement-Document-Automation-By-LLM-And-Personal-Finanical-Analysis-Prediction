@@ -25,6 +25,8 @@ accelerate
 bitsandbytes
 sentence-transformers
 pymupdf 
+pymupdf4llm
+docling
 pytesseract
 tesseract
 opencv-python
@@ -37,3 +39,10 @@ langchain-huggingface
 #object detection models
 ultralytics
 ultralyticsplus
+
+#LLM Evaluation
+deepeval
+ragas 
+
+# AI Agents
+langgraph
