@@ -79,6 +79,10 @@ This project mainly can divide into three main parts:
 
 ### Run Application
 1. For Development version:
-    go to dev folder run jupyter notebook code for development new model/techique 
+    go to dev folder run jupyter notebook code for development new model/techique
+     
+```bash
+cd src/dev/
+```
 2. For Application GUI version: 
     running steamlit run apps.py for develop the application

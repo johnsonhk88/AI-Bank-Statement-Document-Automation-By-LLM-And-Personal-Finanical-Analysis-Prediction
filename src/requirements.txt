@@ -3,7 +3,7 @@ google-generativeai
 python-dotenv
 langchain
 langchain-community
-PyPDF2
+
 chromadb
 faiss-cpu
 langchain_google_genai
@@ -24,12 +24,17 @@ datasets
 accelerate
 bitsandbytes
 sentence-transformers
-pymupdf 
-pymupdf4llm
-docling
+
 pytesseract
 tesseract
 opencv-python
+
+#document loader 
+langchain-docling
+PyPDF2
+pymupdf 
+pymupdf4llm
+docling
 
 #new version of langchain
 langchain-chroma
