@@ -127,3 +127,10 @@ build/
 .Trashes
 # Git worktrees
 .worktrees/
+
+# Multi-harness agents
+agents/**/.venv/
+agents/**/workspace/**
+!agents/**/workspace/.gitkeep
+agents/deep-agents/**/chroma_db/
+agents/deep-agents/**/faiss_index/
