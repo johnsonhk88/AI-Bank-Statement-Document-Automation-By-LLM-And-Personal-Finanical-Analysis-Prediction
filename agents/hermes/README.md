@@ -2,6 +2,8 @@
 
 Nous Research **Hermes Agent** profile for this repo. Tool/shell execution must use **Docker**, not the host shell.
 
+**Full guide:** [docs/guides/multi-harness-agents-guide.md](../../docs/guides/multi-harness-agents-guide.md) (section Hermes)
+
 ## Security model
 
 | Mount | Container path | Mode |

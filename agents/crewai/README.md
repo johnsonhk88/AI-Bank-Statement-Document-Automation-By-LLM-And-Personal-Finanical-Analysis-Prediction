@@ -1,5 +1,7 @@
 # CrewAI harness (baseline)
 
+**Full guide:** [docs/guides/multi-harness-agents-guide.md](../../docs/guides/multi-harness-agents-guide.md) (section CrewAI)
+
 Phase 1 keeps the working baseline in:
 
 - Notebook: `backend/app/core/ai_agent_skills_dev.ipynb`
