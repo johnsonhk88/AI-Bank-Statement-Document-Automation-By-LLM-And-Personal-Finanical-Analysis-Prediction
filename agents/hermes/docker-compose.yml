@@ -1,0 +1,20 @@
+# Optional helper to pre-pull/run a compatible sandbox image.
+# Hermes manages its own docker backend; this file documents the isolation model.
+services:
+  hermes-sandbox:
+    image: nikolaik/python-nodejs:python3.11-nodejs20
+    working_dir: /workspace
+    volumes:
+      - ../../data:/data:ro
+      - ./workspace:/workspace:rw
+      - ./skills:/skills:ro
+    environment:
+      - HERMES_WRITE_SAFE_ROOT=/workspace
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 4g
+    cpus: 2.0
+    command: ["sleep", "infinity"]

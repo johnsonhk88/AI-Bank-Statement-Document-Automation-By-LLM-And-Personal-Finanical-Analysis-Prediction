@@ -1,0 +1,21 @@
+# Project-local Hermes config fragment for bank-statement automation.
+# Merge/copy into the active Hermes profile or point HERMES config at this file
+# per upstream docs. DO NOT use terminal.backend: local in this project.
+
+terminal:
+  backend: docker
+  cwd: /workspace
+  container_cpu: 2
+  container_memory: 4096
+  container_disk: 20480
+  container_persistent: true
+  docker_forward_env: []
+  # Optional explicit image; override if your environment needs OCR/python preinstalled
+  # docker_image: "nikolaik/python-nodejs:python3.11-nodejs20"
+
+approvals:
+  mode: smart
+  timeout: 60
+
+security:
+  allow_private_urls: false
