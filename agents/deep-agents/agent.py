@@ -41,7 +41,7 @@ def build_agent(model: str = "ollama:llama3.2"):
     Requires a configured LLM provider. For offline smoke tests use
     `run_pipeline` instead.
     """
-    backend = FilesystemBackend(root_dir=str(ROOT))
+    backend = FilesystemBackend(root_dir=str(ROOT), virtual_mode=True)
     return create_deep_agent(
         model=model,
         tools=[pdf_extract, pii_redact, vector_store, rag_query],

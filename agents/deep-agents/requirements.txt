@@ -2,6 +2,7 @@
 deepagents>=0.2.0
 langchain>=0.3.25
 langchain-community>=0.3.24
+langchain-ollama>=0.3.0
 langchain-text-splitters>=0.3.8
 langchain-chroma>=0.2.6
 chromadb>=1.0.20
