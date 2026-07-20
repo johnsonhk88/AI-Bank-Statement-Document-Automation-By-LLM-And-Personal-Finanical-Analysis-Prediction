@@ -71,6 +71,16 @@ AI-Bank-Statement-Document-Automation/
 └── README.md
 ```
 
+## Multi-harness agents (experimental)
+
+Parallel agent frameworks live under [`agents/`](agents/README.md):
+
+- **CrewAI** — existing baseline notebook (`backend/app/core/ai_agent_skills_dev.ipynb`)
+- **Deep Agents** — LangChain `deepagents` + agentskills.io (`agents/deep-agents/`)
+- **Hermes** — Docker-sandboxed Hermes profile (`agents/hermes/`)
+
+Each harness has its own skill copies. See the [design spec](docs/superpowers/specs/2026-07-20-multi-harness-agents-design.md).
+
 ## 🚀 Quick Start (Local LLM Recommended)
 ### 1. Setup Environment
 
