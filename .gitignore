@@ -125,3 +125,5 @@ build/
 ._*
 .Spotlight-V100
 .Trashes
+# Git worktrees
+.worktrees/
