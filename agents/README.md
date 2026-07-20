@@ -18,7 +18,7 @@ See `crewai/README.md` and run `backend/app/core/ai_agent_skills_dev.ipynb`.
 cd agents/deep-agents
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python run_e2e.py --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf --question "Summarize total debits and credits"
+PYTHONPATH=. python run_e2e.py --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf --question "Summarize total debits and credits"
 ```
 
 ### Hermes (Docker required)

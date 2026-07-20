@@ -6,12 +6,22 @@ from tools.vector_store import store_documents
 from tools.rag_query import query_store
 
 
-def test_redact_pii_masks_email_and_account():
+def test_redact_pii_masks_email_phone_and_account_independently():
     raw = "Email jane.doe@example.com account 12345678 phone +1-555-0100"
     out = redact_pii(raw)
     assert "jane.doe@example.com" not in out
+    assert "[REDACTED_EMAIL]" in out
     assert "12345678" not in out
-    assert "[REDACTED" in out or "***" in out
+    assert "[REDACTED_ACCOUNT]" in out
+    assert "+1-555-0100" not in out
+    assert "[REDACTED_PHONE]" in out
+
+
+def test_redact_pii_hyphenated_account():
+    raw = "Account Number: 123-456-789 holder line"
+    out = redact_pii(raw)
+    assert "123-456-789" not in out
+    assert "[REDACTED_ACCOUNT]" in out
 
 
 def test_extract_pdf_text_reads_sample(tmp_path: Path):
