@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 from langchain_chroma import Chroma
@@ -26,6 +27,8 @@ class HashEmbedding(Embeddings):
 
 def store_documents(texts: list[str], persist_dir: str | Path) -> str:
     path = Path(persist_dir)
+    if path.exists():
+        shutil.rmtree(path)
     path.mkdir(parents=True, exist_ok=True)
     docs = [Document(page_content=t) for t in texts if t and t.strip()]
     if not docs:
