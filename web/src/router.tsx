@@ -1,16 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import NewBatchPage from "./pages/NewBatchPage";
+import BatchListPage from "./pages/BatchListPage";
+import BatchDetailPage from "./pages/BatchDetailPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
-
-function BatchListPage() {
-  return <div>BatchListPage</div>;
-}
-
-function BatchDetailPage() {
-  return <div>BatchDetailPage</div>;
-}
 
 export function Router() {
   return (
