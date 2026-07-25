@@ -21,7 +21,7 @@ async def error_middleware(request: Request, call_next):
         return await call_next(request)
     except Exception:
         import traceback; traceback.print_exc()
-        return JSONResponse(500, content={"error":{"code":"INTERNAL","message":"Internal server error"}})
+        return JSONResponse(status_code=500, content={"error":{"code":"INTERNAL","message":"Internal server error"}})
 
 @app.get("/api/health")
 async def health():
@@ -38,3 +38,6 @@ async def health():
         qc.get_collections(); qdrant_status = "ok"
     except Exception: qdrant_status = "down"
     return {"status":"ok","db":db_status,"redis":redis_status,"qdrant":qdrant_status}
+
+from app.api.auth import router as auth_router
+app.include_router(auth_router)

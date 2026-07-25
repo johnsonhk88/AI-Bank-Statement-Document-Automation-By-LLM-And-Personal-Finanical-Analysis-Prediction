@@ -1,6 +1,6 @@
 from __future__ import annotations
 import uuid
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
@@ -14,8 +14,8 @@ class AgentRun(Base, TimestampMixin, SoftDeleteMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
     llm_provider: Mapped[str] = mapped_column(String(50), nullable=False)
     llm_model: Mapped[str] = mapped_column(String(255), nullable=False)
-    started_at = mapped_column(TimestampMixin.created_at.type, nullable=True)
-    finished_at = mapped_column(TimestampMixin.created_at.type, nullable=True)
+    started_at = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at = mapped_column(DateTime(timezone=True), nullable=True)
     items: Mapped[list["AgentRunItem"]] = relationship("AgentRunItem", back_populates="run", cascade="all, delete-orphan")
 
 class AgentRunItem(Base, TimestampMixin):
@@ -27,6 +27,6 @@ class AgentRunItem(Base, TimestampMixin):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     markdown_report: Mapped[str | None] = mapped_column(Text, nullable=True)
     transactions: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    started_at = mapped_column(TimestampMixin.created_at.type, nullable=True)
-    finished_at = mapped_column(TimestampMixin.created_at.type, nullable=True)
+    started_at = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at = mapped_column(DateTime(timezone=True), nullable=True)
     run: Mapped[AgentRun] = relationship("AgentRun", back_populates="items")
