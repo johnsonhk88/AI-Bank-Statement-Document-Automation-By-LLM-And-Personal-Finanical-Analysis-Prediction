@@ -214,27 +214,22 @@ The full-stack app wraps the three agent harnesses (CrewAI, Deep Agents, Hermes)
 
 - **Design spec:** [docs/superpowers/specs/2026-07-25-full-stack-app-design.md](docs/superpowers/specs/2026-07-25-full-stack-app-design.md)
 - **Implementation plan:** [docs/superpowers/plans/2026-07-25-full-stack-app.md](docs/superpowers/plans/2026-07-25-full-stack-app.md)
+- **Step-by-step run & test guide:** [docs/guides/full-stack-app-guide.md](docs/guides/full-stack-app-guide.md) — prerequisites, configuration, dev/prod runs, HTTP smoke tests, pytest + vitest walkthroughs, troubleshooting, cheat sheet
 
 ### Quickstart
 
 ```bash
-# 1. Generate an admin password hash
+# 1. Configure environment (edit infra/.env with JWT_SECRET + ADMIN_PASSWORD_HASH)
+cp infra/.env.example infra/.env
 python -c "from passlib.context import CryptContext; print(CryptContext(schemes=['bcrypt']).hash('your-password'))"
 
-# 2. Configure environment
-cp infra/.env.example infra/.env
-# Edit infra/.env: set JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD_HASH
+# 2. Start everything (prod profile: API + Worker + Nginx serving the SPA on :80)
+cd infra && docker compose --profile prod up -d --build
+# Open http://localhost
 
-# 3. Start services
-cd infra && docker compose up -d
-
-# 4. Run frontend (dev mode)
-cd web && npm install && npm run dev
-# Open http://localhost:5173
-
-# 5. Or run production mode
-cd infra && docker compose --profile prod up -d
-# Open http://localhost:80
+# 3. For development (API with reload + Vite HMR on :5173):
+cd infra && docker compose up -d           # backend services
+cd web && npm install && npm run dev        # frontend dev server
 ```
 
 > **Note:** Experiment code in `backend/`, `agents/`, `frontend/streamlit_app/`, `notebooks/`, `yolo-base-layout-analysis/` is untouched by v1.
