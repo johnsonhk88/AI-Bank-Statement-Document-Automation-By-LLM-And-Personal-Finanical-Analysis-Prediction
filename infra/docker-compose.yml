@@ -109,6 +109,17 @@ services:
     command: >
       celery -A api.app.worker.celery_app worker --loglevel=info --concurrency=2
 
+  web:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+    profiles:
+      - prod
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+
 volumes:
   pgdata:
   qdrant_data:
