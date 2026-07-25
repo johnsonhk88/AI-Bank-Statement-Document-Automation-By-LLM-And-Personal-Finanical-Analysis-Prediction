@@ -128,6 +128,15 @@ build/
 # Git worktrees
 .worktrees/
 
+# Web / Frontend
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+web/vite.config.d.ts
+web/vite.config.js
+web/tailwind.config.d.ts
+web/tailwind.config.js
+
 # Multi-harness agents
 agents/**/.venv/
 agents/**/workspace/**
