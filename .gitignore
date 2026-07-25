@@ -52,6 +52,7 @@ env/
 # ----------------------
 # Data & Large Files (Important for this project)
 # ----------------------
+api/app/core/*.db
 data/uploads/
 data/processed/
 data/vector_stores/
