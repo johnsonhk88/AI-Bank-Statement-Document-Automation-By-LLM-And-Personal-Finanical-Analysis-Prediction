@@ -42,6 +42,8 @@ async def health():
 from app.api.auth import router as auth_router
 from app.api.llm import router as llm_router
 from app.api.documents import router as documents_router
+from app.api.agent_runs import router as agent_runs_router
 app.include_router(auth_router)
 app.include_router(llm_router)
 app.include_router(documents_router)
+app.include_router(agent_runs_router)
