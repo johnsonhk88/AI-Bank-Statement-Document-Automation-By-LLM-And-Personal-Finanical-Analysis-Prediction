@@ -1,0 +1,59 @@
+# ============================================================
+# BankAI API - Pinned Requirements
+# ============================================================
+# All critical packages are pinned to exact versions.
+# For dependency conflict debugging: pip install pipdeptree && pipdeptree
+# ============================================================
+
+# --- FastAPI Web ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-multipart>=0.0.12
+
+# --- Async DB ---
+sqlalchemy[asyncio]>=2.0.0,<3
+asyncpg>=0.29.0
+alembic>=1.13.0
+
+# --- Celery + Redis ---
+celery[redis]>=5.4.0
+redis>=5.0.0
+
+# --- Qdrant ---
+qdrant-client>=1.13.0
+langchain-qdrant
+
+# --- LangChain ---
+langchain==0.3.25
+langchain-community==0.3.24
+langchain-text-splitters==0.3.8
+langchain-huggingface==0.2.0
+
+# --- Embeddings ---
+sentence-transformers==4.1.0
+
+# --- LLM Providers ---
+litellm==1.79.2
+crewai==1.14.7
+crewai[tools]==1.14.7
+instructor==1.15.1
+
+# --- Document Processing ---
+pymupdf==1.26.6
+
+# --- Security ---
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# --- Configuration ---
+pydantic-settings>=2.0.0
+
+# --- HTTP Client ---
+httpx==0.28.1
+
+# --- Testing ---
+pytest>=8.0.0
+pytest-asyncio>=0.24.0
+
+# --- YAML ---
+PyYAML==6.0.2

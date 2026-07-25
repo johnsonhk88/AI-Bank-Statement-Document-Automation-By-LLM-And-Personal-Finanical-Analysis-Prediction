@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bankai-api"
+version = "0.1.0"
+description = "BankAI API — FastAPI backend for bank statement analysis"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "BankAI Team"}]
+
+[project.scripts]
+bankai-api = "app.main:app"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q"
+testpaths = ["app/tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]
