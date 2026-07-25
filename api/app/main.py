@@ -40,4 +40,6 @@ async def health():
     return {"status":"ok","db":db_status,"redis":redis_status,"qdrant":qdrant_status}
 
 from app.api.auth import router as auth_router
+from app.api.llm import router as llm_router
 app.include_router(auth_router)
+app.include_router(llm_router)
