@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, EmailStr
 
 class LoginRequest(BaseModel):
@@ -10,7 +11,7 @@ class TokenResponse(BaseModel):
     user: "UserOut"
 
 class UserOut(BaseModel):
-    id: str
+    id: uuid.UUID
     email: str
     is_admin: bool
     model_config = {"from_attributes": True}

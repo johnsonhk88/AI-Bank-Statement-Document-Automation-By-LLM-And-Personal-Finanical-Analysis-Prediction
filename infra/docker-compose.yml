@@ -35,7 +35,7 @@ services:
     ports:
       - "6333:6333"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      test: ["CMD-SHELL", "grep -q '00000000:18BD' /proc/net/tcp || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -51,6 +51,13 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
       APP_ENV: ${APP_ENV:-dev}
       POSTGRES_USER: ${POSTGRES_USER:-bankai}
@@ -73,7 +80,8 @@ services:
     ports:
       - "8000:8000"
     command: >
-      sh -c "cd /app/api && alembic -c alembic.ini upgrade head &&
+      sh -c "ln -sf /app/backend/app/skills /app/api/app/skills &&
+             cd /app/api && alembic -c alembic.ini upgrade head &&
              uvicorn api.app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   worker:
@@ -87,6 +95,13 @@ services:
         condition: service_healthy
       qdrant:
         condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
       APP_ENV: ${APP_ENV:-dev}
       POSTGRES_USER: ${POSTGRES_USER:-bankai}
