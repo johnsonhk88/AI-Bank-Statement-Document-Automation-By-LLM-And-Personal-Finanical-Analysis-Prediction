@@ -122,3 +122,37 @@ class SavingsCapacityResponse(BaseModel):
     bollinger: BollingerPosition
     recommendation: str
     months: list[SignalMonthDetail]
+
+
+# ---------------------------------------------------------------------------
+# Spending-trend alerts (Phase 2 — MACD + SMA crossover)
+# ---------------------------------------------------------------------------
+
+SpendingTrend = Literal["accelerating", "decelerating", "stable"]
+SMACrossover = Literal["golden_cross", "death_cross", "none"]
+
+
+class SpendingMonthDetail(BaseModel):
+    month: str
+    amount: float
+    macd: float | None
+    signal: float | None
+    short_sma: float | None
+    long_sma: float | None
+
+
+class CategorySpendingAlert(BaseModel):
+    category: str
+    trend: SpendingTrend
+    alert: bool
+    macd_histogram: float | None
+    sma_crossover: SMACrossover
+    recommendation: str
+    months: list[SpendingMonthDetail]
+
+
+class SpendingAlertsResponse(BaseModel):
+    currency: str
+    categories: list[CategorySpendingAlert]
+    alert_count: int
+    total_categories: int

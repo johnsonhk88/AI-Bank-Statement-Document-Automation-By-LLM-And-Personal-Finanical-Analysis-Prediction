@@ -23,11 +23,17 @@ from app.schemas.cashflow import (
     LineItemOut,
     MonthlyTrend,
     SavingsCapacityResponse,
+    SpendingAlertsResponse,
     TransactionList,
     TransactionOut,
 )
 from app.services.forecaster import forecast_cashflow
-from app.services.ta_analyzer import MIN_MONTHS_REQUIRED, analyze_savings_capacity
+from app.services.ta_analyzer import (
+    MIN_MONTHS_REQUIRED,
+    MIN_SPENDING_MONTHS_REQUIRED,
+    analyze_savings_capacity,
+    analyze_spending_trends,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -357,6 +363,87 @@ async def cashflow_signals(
     result = analyze_savings_capacity(monthly_data)
 
     return SavingsCapacityResponse(currency=currency, **result)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/signals/spending
+# ---------------------------------------------------------------------------
+
+@router.get("/signals/spending", response_model=SpendingAlertsResponse)
+async def cashflow_spending_alerts(
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Per-category spending trend alerts using MACD + SMA crossover.
+
+    Analyzes each expense category's monthly spend to detect accelerating,
+    decelerating, or stable trends. Alerts on categories with rising spend.
+    """
+    year_col = extract("year", Transaction.date).label("yr")
+    month_col = extract("month", Transaction.date).label("mo")
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.currency == currency,
+        Transaction.amount < 0,  # expenses only
+    ]
+
+    q = await db.execute(
+        select(
+            Transaction.category,
+            year_col,
+            month_col,
+            func.sum(func.abs(Transaction.amount)).label("total"),
+        )
+        .where(*base_where)
+        .group_by(Transaction.category, year_col, month_col)
+        .order_by(Transaction.category, year_col, month_col)
+    )
+    rows = q.all()
+
+    if not rows:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": "No expense data found for spending analysis",
+                }
+            },
+        )
+
+    # Group by category
+    category_data: dict[str, list[dict]] = {}
+    for row in rows:
+        cat = row.category
+        month_str = f"{int(row.yr):04d}-{int(row.mo):02d}"
+        if cat not in category_data:
+            category_data[cat] = []
+        category_data[cat].append({"month": month_str, "amount": float(row.total)})
+
+    # Check if any category has enough data
+    has_enough = any(
+        len(months) >= MIN_SPENDING_MONTHS_REQUIRED
+        for months in category_data.values()
+    )
+    if not has_enough:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": (
+                        f"Need at least {MIN_SPENDING_MONTHS_REQUIRED} months "
+                        f"of data in at least one category for spending analysis"
+                    ),
+                }
+            },
+        )
+
+    result = analyze_spending_trends(category_data)
+
+    return SpendingAlertsResponse(currency=currency, **result)
 
 
 # ---------------------------------------------------------------------------
