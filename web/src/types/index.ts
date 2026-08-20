@@ -143,6 +143,68 @@ export interface TransactionList {
   offset: number;
 }
 
+// --- Savings-capacity signals (Phase 1) ---
+
+export interface SignalMonthDetail {
+  month: string;
+  net: number;
+  bb_upper: number | null;
+  bb_middle: number | null;
+  bb_lower: number | null;
+  rsi: number | null;
+}
+
+export interface BollingerPosition {
+  pband: number | null;
+  position:
+    | "above_upper"
+    | "upper_half"
+    | "lower_half"
+    | "below_lower"
+    | "insufficient_data";
+}
+
+export type SignalValue = "INVEST" | "HOLD" | "ALERT";
+
+export interface SavingsCapacityResponse {
+  currency: string;
+  current_signal: SignalValue;
+  rsi: number | null;
+  bollinger: BollingerPosition;
+  recommendation: string;
+  months: SignalMonthDetail[];
+}
+
+// --- Spending-trend alerts (Phase 2) ---
+
+export type SpendingTrend = "accelerating" | "decelerating" | "stable";
+
+export interface SpendingMonthDetail {
+  month: string;
+  amount: number;
+  macd: number | null;
+  signal: number | null;
+  short_sma: number | null;
+  long_sma: number | null;
+}
+
+export interface CategorySpendingAlert {
+  category: string;
+  trend: SpendingTrend;
+  alert: boolean;
+  macd_histogram: number | null;
+  sma_crossover: "golden_cross" | "death_cross" | "none";
+  recommendation: string;
+  months: SpendingMonthDetail[];
+}
+
+export interface SpendingAlertsResponse {
+  currency: string;
+  categories: CategorySpendingAlert[];
+  alert_count: number;
+  total_categories: number;
+}
+
 // --- Agent run types ---
 
 export interface AgentRunOut {

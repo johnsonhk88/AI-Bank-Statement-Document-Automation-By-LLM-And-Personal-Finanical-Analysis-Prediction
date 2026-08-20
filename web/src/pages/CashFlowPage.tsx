@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { DateRangeFilter } from "../components/cashflow/DateRangeFilter";
 import { SummaryCards } from "../components/cashflow/SummaryCards";
+import { SignalCard } from "../components/cashflow/SignalCard";
+import { SpendingAlerts } from "../components/cashflow/SpendingAlerts";
 import { CategoryChart } from "../components/cashflow/CategoryChart";
 import { TrendChart } from "../components/cashflow/TrendChart";
 import { ForecastChart } from "../components/cashflow/ForecastChart";
@@ -12,6 +14,8 @@ import type {
   CashFlowCategories,
   CashFlowTrends,
   CashFlowForecast,
+  SavingsCapacityResponse,
+  SpendingAlertsResponse,
   TransactionList,
 } from "../types";
 
@@ -56,6 +60,24 @@ export default function CashFlowPage() {
     queryFn: () =>
       api.get<CashFlowForecast>(
         `/cashflow/forecast?horizon_months=6&currency=${currency}`
+      ),
+    retry: false,
+  });
+
+  const signalsQ = useQuery({
+    queryKey: ["cashflow-signals", currency],
+    queryFn: () =>
+      api.get<SavingsCapacityResponse>(
+        `/cashflow/signals?currency=${currency}`
+      ),
+    retry: false,
+  });
+
+  const spendingAlertsQ = useQuery({
+    queryKey: ["cashflow-spending-alerts", currency],
+    queryFn: () =>
+      api.get<SpendingAlertsResponse>(
+        `/cashflow/signals/spending?currency=${currency}`
       ),
     retry: false,
   });
@@ -110,6 +132,8 @@ export default function CashFlowPage() {
 
       {summaryQ.data && <SummaryCards data={summaryQ.data} />}
 
+      {signalsQ.data && <SignalCard data={signalsQ.data} />}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {categoriesQ.data && (
           <CategoryChart
@@ -122,6 +146,10 @@ export default function CashFlowPage() {
           <TrendChart months={trendsQ.data.months} currency={currency} />
         )}
       </div>
+
+      {spendingAlertsQ.data && (
+        <SpendingAlerts data={spendingAlertsQ.data} currency={currency} />
+      )}
 
       {forecastQ.data && <ForecastChart forecast={forecastQ.data} />}
 
