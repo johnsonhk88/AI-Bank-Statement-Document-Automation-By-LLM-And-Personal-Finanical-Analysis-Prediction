@@ -3,9 +3,10 @@
 Phase 1: Bollinger Bands + RSI on net cashflow → INVEST/HOLD/ALERT signals.
 Phase 2: MACD + SMA crossover on per-category spend → spending trend alerts.
 Phase 2.7: Weekly signals — same indicators with adapted windows.
+Phase 3: ATR on income — income stability / risk profile.
 
 Window sizes are adapted from daily market data to monthly/weekly personal finance:
-  Monthly: BB(6), RSI(6), MACD(4,8,3), SMA(3/6)
+  Monthly: BB(6), RSI(6), MACD(4,8,3), SMA(3/6), ATR(6)
   Weekly:  BB(4), RSI(4), MACD(2,4,2)
 
 All indicators are implemented directly with vectorised pandas — the
@@ -656,4 +657,165 @@ def _build_weekly_recommendation(
             f"Weekly net ({this_week:,.0f}) is {direction} from last week "
             f"({last_week:,.0f}), RSI: {rsi_str}. Cash flow is within "
             f"normal range."
+        )
+
+
+# ===========================================================================
+# Phase 3 — Income stability (ATR on income)
+# ===========================================================================
+
+# ATR% thresholds for income risk profile
+ATR_LOW_THRESHOLD = 10.0    # <10% = stable salaried income
+ATR_HIGH_THRESHOLD = 25.0   # >25% = volatile freelancer/commission income
+
+INCOME_ATR_WINDOW = 6  # 6-month ATR window
+
+
+def compute_income_atr(
+    incomes: list[float],
+    window: int = INCOME_ATR_WINDOW,
+) -> list[float | None]:
+    """Compute Average True Range adapted for monthly income.
+
+    In markets, ATR uses High-Low-Close candles. For personal income we have
+    one value per month, so True Range = |income[t] - income[t-1]|.
+    ATR is the EMA-smoothed TR (Wilder smoothing, same as RSI).
+
+    Returns list of ATR values with None for warm-up period.
+    """
+    s = pd.Series(incomes, dtype=float)
+    # True Range = absolute month-over-month change
+    tr = s.diff().abs()
+
+    # EMA smoothing (Wilder's method: alpha = 1/window)
+    atr = tr.ewm(alpha=1.0 / window, min_periods=window, adjust=False).mean()
+
+    # Warm-up: first value has no diff, then need window periods for EMA
+    atr.iloc[:window] = np.nan
+
+    return _series_to_optional_list(atr)
+
+
+def analyze_income_stability(
+    monthly_data: list[dict[str, Any]],
+    atr_window: int = INCOME_ATR_WINDOW,
+) -> dict[str, Any]:
+    """Analyze monthly income for stability and risk profile.
+
+    Args:
+        monthly_data: List of {"month", "income", "expenses", "net"} dicts,
+                      ordered chronologically.
+
+    Returns:
+        {
+            "risk_profile": "LOW" | "MEDIUM" | "HIGH",
+            "atr": float,
+            "atr_percent": float,
+            "mean_income": float,
+            "income_trend": "growing" | "declining" | "stable",
+            "recommendation": str,
+            "months": [{"month", "income", "atr"}, ...],
+        }
+
+    Raises:
+        ValueError: If fewer than MIN_MONTHS_REQUIRED months provided.
+    """
+    if len(monthly_data) < MIN_MONTHS_REQUIRED:
+        raise ValueError(
+            f"Need at least {MIN_MONTHS_REQUIRED} months of data, "
+            f"got {len(monthly_data)}"
+        )
+
+    incomes = [d["income"] for d in monthly_data]
+    atr_values = compute_income_atr(incomes, window=atr_window)
+
+    # Current ATR (last valid value)
+    current_atr = atr_values[-1] if atr_values[-1] is not None else 0.0
+    mean_income = sum(incomes) / len(incomes)
+
+    # ATR as percentage of mean income
+    atr_pct = (current_atr / mean_income * 100) if mean_income > 0 else 0.0
+    atr_pct = round(atr_pct, 1)
+
+    # Risk profile
+    risk_profile = _classify_risk(atr_pct)
+
+    # Income trend (simple: compare first-half average to second-half average)
+    half = len(incomes) // 2
+    first_half_avg = sum(incomes[:half]) / half if half > 0 else 0
+    second_half_avg = sum(incomes[half:]) / (len(incomes) - half) if len(incomes) > half else 0
+
+    trend_pct = ((second_half_avg - first_half_avg) / first_half_avg * 100) if first_half_avg > 0 else 0
+    if trend_pct > 5:
+        income_trend = "growing"
+    elif trend_pct < -5:
+        income_trend = "declining"
+    else:
+        income_trend = "stable"
+
+    # Build per-month detail
+    months_detail = [
+        {
+            "month": monthly_data[i]["month"],
+            "income": incomes[i],
+            "atr": atr_values[i],
+        }
+        for i in range(len(monthly_data))
+    ]
+
+    recommendation = _build_stability_recommendation(
+        risk_profile, atr_pct, mean_income, income_trend
+    )
+
+    return {
+        "risk_profile": risk_profile,
+        "atr": round(current_atr, 2),
+        "atr_percent": atr_pct,
+        "mean_income": round(mean_income, 2),
+        "income_trend": income_trend,
+        "recommendation": recommendation,
+        "months": months_detail,
+    }
+
+
+def _classify_risk(atr_pct: float) -> str:
+    """Classify income volatility into a risk profile."""
+    if atr_pct < ATR_LOW_THRESHOLD:
+        return "LOW"
+    elif atr_pct > ATR_HIGH_THRESHOLD:
+        return "HIGH"
+    return "MEDIUM"
+
+
+def _build_stability_recommendation(
+    risk: str,
+    atr_pct: float,
+    mean_income: float,
+    trend: str,
+) -> str:
+    """Generate plain-language income stability recommendation."""
+    trend_note = ""
+    if trend == "growing":
+        trend_note = " Income is trending upward — a good sign for increasing contributions."
+    elif trend == "declining":
+        trend_note = " Income is trending downward — consider building a larger buffer."
+
+    if risk == "LOW":
+        return (
+            f"Your income is very stable (volatility: {atr_pct:.1f}%, "
+            f"avg: {mean_income:,.0f}/month). You can invest more "
+            f"aggressively — consider allocating 20-30% of surplus to "
+            f"growth assets.{trend_note}"
+        )
+    elif risk == "HIGH":
+        return (
+            f"Your income is highly variable (volatility: {atr_pct:.1f}%, "
+            f"avg: {mean_income:,.0f}/month). Maintain a 6-month emergency "
+            f"fund before investing. Prefer liquid, low-risk assets.{trend_note}"
+        )
+    else:
+        return (
+            f"Your income has moderate variability (volatility: {atr_pct:.1f}%, "
+            f"avg: {mean_income:,.0f}/month). Keep a 3-month emergency "
+            f"fund and invest surplus in a balanced portfolio.{trend_note}"
         )

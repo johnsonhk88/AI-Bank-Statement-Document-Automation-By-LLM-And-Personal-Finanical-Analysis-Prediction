@@ -20,6 +20,7 @@ from app.schemas.cashflow import (
     CashFlowSummary,
     CashFlowTrends,
     CategoryAmount,
+    IncomeStabilityResponse,
     LineItemOut,
     MonthlyTrend,
     SavingsCapacityResponse,
@@ -36,6 +37,7 @@ from app.services.ta_analyzer import (
     MIN_MONTHS_REQUIRED,
     MIN_SPENDING_MONTHS_REQUIRED,
     MIN_WEEKS_REQUIRED,
+    analyze_income_stability,
     analyze_savings_capacity,
     analyze_spending_trends,
     analyze_weekly_signals,
@@ -450,6 +452,72 @@ async def cashflow_spending_alerts(
     result = analyze_spending_trends(category_data)
 
     return SpendingAlertsResponse(currency=currency, **result)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/signals/income
+# ---------------------------------------------------------------------------
+
+@router.get("/signals/income", response_model=IncomeStabilityResponse)
+async def cashflow_income_stability(
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Income stability analysis using ATR (Average True Range).
+
+    Measures income volatility to determine risk profile:
+    LOW (<10% ATR%), MEDIUM (10-25%), HIGH (>25%).
+    Recommends investment strategy based on income predictability.
+    """
+    year_col = extract("year", Transaction.date).label("yr")
+    month_col = extract("month", Transaction.date).label("mo")
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.currency == currency,
+    ]
+
+    q = await db.execute(
+        select(
+            year_col,
+            month_col,
+            func.coalesce(func.sum(case((Transaction.amount > 0, Transaction.amount), else_=Decimal("0"))), Decimal("0")).label("income"),
+            func.coalesce(func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=Decimal("0"))), Decimal("0")).label("expenses"),
+        )
+        .where(*base_where)
+        .group_by(year_col, month_col)
+        .order_by(year_col, month_col)
+    )
+    rows = q.all()
+
+    if len(rows) < MIN_MONTHS_REQUIRED:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": (
+                        f"Need at least {MIN_MONTHS_REQUIRED} months of data "
+                        f"for income stability analysis, got {len(rows)}"
+                    ),
+                }
+            },
+        )
+
+    monthly_data = [
+        {
+            "month": f"{int(row.yr):04d}-{int(row.mo):02d}",
+            "income": float(row.income),
+            "expenses": float(row.expenses),
+            "net": float(row.income - row.expenses),
+        }
+        for row in rows
+    ]
+
+    result = analyze_income_stability(monthly_data)
+
+    return IncomeStabilityResponse(currency=currency, **result)
 
 
 # ---------------------------------------------------------------------------

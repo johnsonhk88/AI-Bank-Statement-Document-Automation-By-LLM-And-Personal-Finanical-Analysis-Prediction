@@ -262,6 +262,28 @@ export interface WeeklyForecast {
   net: WeeklyForecastPoint[];
 }
 
+// --- Income stability (Phase 3) ---
+
+export type RiskProfile = "LOW" | "MEDIUM" | "HIGH";
+export type IncomeTrend = "growing" | "declining" | "stable";
+
+export interface IncomeMonthDetail {
+  month: string;
+  income: number;
+  atr: number | null;
+}
+
+export interface IncomeStabilityResponse {
+  currency: string;
+  risk_profile: RiskProfile;
+  atr: number;
+  atr_percent: number;
+  mean_income: number;
+  income_trend: IncomeTrend;
+  recommendation: string;
+  months: IncomeMonthDetail[];
+}
+
 // --- Agent run types ---
 
 export interface AgentRunOut {

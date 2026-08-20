@@ -216,3 +216,28 @@ class WeeklyForecast(BaseModel):
     income: list[WeeklyForecastPoint]
     expenses: list[WeeklyForecastPoint]
     net: list[WeeklyForecastPoint]
+
+
+# ---------------------------------------------------------------------------
+# Income stability (Phase 3 — ATR on income)
+# ---------------------------------------------------------------------------
+
+RiskProfile = Literal["LOW", "MEDIUM", "HIGH"]
+IncomeTrend = Literal["growing", "declining", "stable"]
+
+
+class IncomeMonthDetail(BaseModel):
+    month: str
+    income: float
+    atr: float | None
+
+
+class IncomeStabilityResponse(BaseModel):
+    currency: str
+    risk_profile: RiskProfile
+    atr: float
+    atr_percent: float
+    mean_income: float
+    income_trend: IncomeTrend
+    recommendation: str
+    months: list[IncomeMonthDetail]

@@ -11,6 +11,7 @@ import { ForecastChart } from "../components/cashflow/ForecastChart";
 import { WeeklySignalCard } from "../components/cashflow/WeeklySignalCard";
 import { WeeklyTrendChart } from "../components/cashflow/WeeklyTrendChart";
 import { WeeklyForecastChart } from "../components/cashflow/WeeklyForecastChart";
+import { IncomeStabilityCard } from "../components/cashflow/IncomeStabilityCard";
 import { TransactionTable } from "../components/cashflow/TransactionTable";
 import type {
   CashFlowSummary,
@@ -19,6 +20,7 @@ import type {
   CashFlowForecast,
   SavingsCapacityResponse,
   SpendingAlertsResponse,
+  IncomeStabilityResponse,
   WeeklyTrends,
   WeeklySignalsResponse,
   WeeklyForecast,
@@ -96,6 +98,15 @@ export default function CashFlowPage() {
       ),
     retry: false,
     enabled: !isWeekly,
+  });
+
+  const incomeStabilityQ = useQuery({
+    queryKey: ["cashflow-income-stability", currency],
+    queryFn: () =>
+      api.get<IncomeStabilityResponse>(
+        `/cashflow/signals/income?currency=${currency}`
+      ),
+    retry: false,
   });
 
   // --- Weekly queries ---
@@ -204,6 +215,10 @@ export default function CashFlowPage() {
       )}
 
       {summaryQ.data && <SummaryCards data={summaryQ.data} />}
+
+      {incomeStabilityQ.data && (
+        <IncomeStabilityCard data={incomeStabilityQ.data} currency={currency} />
+      )}
 
       {/* --- Monthly view --- */}
       {!isWeekly && (
