@@ -2,12 +2,11 @@
 
 Phase 1: Bollinger Bands + RSI on net cashflow → INVEST/HOLD/ALERT signals.
 Phase 2: MACD + SMA crossover on per-category spend → spending trend alerts.
+Phase 2.7: Weekly signals — same indicators with adapted windows.
 
-Window sizes are adapted from daily market data to monthly personal finance:
-- Bollinger Bands: 6-month window, 2σ (market standard: 20-day)
-- RSI: 6-month window (market standard: 14-day)
-- MACD: (4, 8, 3) — fast/slow/signal (market standard: 12, 26, 9)
-- SMA crossover: 3-month vs 6-month (market standard: 50-day vs 200-day)
+Window sizes are adapted from daily market data to monthly/weekly personal finance:
+  Monthly: BB(6), RSI(6), MACD(4,8,3), SMA(3/6)
+  Weekly:  BB(4), RSI(4), MACD(2,4,2)
 
 All indicators are implemented directly with vectorised pandas — the
 upstream `ta` library (bukosabino/ta v0.11.0) has critical correctness bugs
@@ -25,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 MIN_MONTHS_REQUIRED = 7       # Phase 1: window(6) + 1 for first valid value
 MIN_SPENDING_MONTHS_REQUIRED = 9  # Phase 2: slow EMA(8) + signal(3) warm-up needs ~9 months
+MIN_WEEKS_REQUIRED = 8        # Phase 2.7: BB(4)+RSI(4) need ≥5, MACD(2,4,2) needs ≥5, use 8 for safety
 
 # RSI thresholds (adapted for personal finance monthly data)
 RSI_OVERBOUGHT = 70.0  # savings momentum very high → invest surplus
@@ -518,4 +518,142 @@ def _build_spending_recommendation(
         return (
             f"Your {category} spending is stable "
             f"(avg: {mean_spend:,.0f}/month). No action needed."
+        )
+
+
+# ===========================================================================
+# Phase 2.7 — Weekly signals (BB-4w + RSI-4w + MACD-2,4,2)
+# ===========================================================================
+
+WEEKLY_BB_WINDOW = 4
+WEEKLY_RSI_WINDOW = 4
+WEEKLY_MACD_FAST = 2
+WEEKLY_MACD_SLOW = 4
+WEEKLY_MACD_SIGNAL = 2
+
+
+def analyze_weekly_signals(
+    weekly_data: list[dict[str, Any]],
+    bb_window: int = WEEKLY_BB_WINDOW,
+    bb_std: int = 2,
+    rsi_window: int = WEEKLY_RSI_WINDOW,
+) -> dict[str, Any]:
+    """Analyze weekly cashflow for savings capacity signals.
+
+    Same logic as monthly analyze_savings_capacity but with weekly windows.
+    Adds week-over-week comparison.
+
+    Args:
+        weekly_data: List of {"week", "week_start", "income", "expenses", "net"},
+                     ordered chronologically.
+
+    Returns:
+        {
+            "current_signal": "INVEST" | "HOLD" | "ALERT",
+            "rsi": float | None,
+            "bollinger": {"pband": float | None, "position": str},
+            "recommendation": str,
+            "weeks": [{"week", "net", "bb_upper", "bb_middle", "bb_lower", "rsi"}, ...],
+            "comparison": {
+                "this_week_net": float,
+                "last_week_net": float,
+                "week_over_week_change": float,
+                "vs_4_weeks_ago": float | None,
+            },
+        }
+
+    Raises:
+        ValueError: If fewer than MIN_WEEKS_REQUIRED weeks provided.
+    """
+    if len(weekly_data) < MIN_WEEKS_REQUIRED:
+        raise ValueError(
+            f"Need at least {MIN_WEEKS_REQUIRED} weeks of data, "
+            f"got {len(weekly_data)}"
+        )
+
+    nets = [d["net"] for d in weekly_data]
+
+    bb = compute_bollinger_bands(nets, window=bb_window, num_std=bb_std)
+    rsi_values = compute_rsi(nets, window=rsi_window)
+
+    current_rsi = rsi_values[-1]
+    current_pband = bb["pband"][-1]
+    current_bb_upper = bb["upper"][-1]
+    current_bb_lower = bb["lower"][-1]
+
+    signal = _determine_signal(
+        net=nets[-1],
+        rsi=current_rsi,
+        pband=current_pband,
+        bb_upper=current_bb_upper,
+        bb_lower=current_bb_lower,
+    )
+
+    weeks_detail = [
+        {
+            "week": weekly_data[i]["week"],
+            "net": nets[i],
+            "bb_upper": bb["upper"][i],
+            "bb_middle": bb["middle"][i],
+            "bb_lower": bb["lower"][i],
+            "rsi": rsi_values[i],
+        }
+        for i in range(len(weekly_data))
+    ]
+
+    # Week-over-week comparison
+    this_week = nets[-1]
+    last_week = nets[-2]
+    vs_4w = nets[-5] if len(nets) >= 5 else None
+
+    comparison = {
+        "this_week_net": this_week,
+        "last_week_net": last_week,
+        "week_over_week_change": round(this_week - last_week, 2),
+        "vs_4_weeks_ago": round(this_week - vs_4w, 2) if vs_4w is not None else None,
+    }
+
+    recommendation = _build_weekly_recommendation(signal, current_rsi, this_week, last_week)
+
+    return {
+        "current_signal": signal,
+        "rsi": current_rsi,
+        "bollinger": {
+            "pband": current_pband,
+            "position": _bb_position(current_pband),
+        },
+        "recommendation": recommendation,
+        "weeks": weeks_detail,
+        "comparison": comparison,
+    }
+
+
+def _build_weekly_recommendation(
+    signal: str,
+    rsi: float | None,
+    this_week: float,
+    last_week: float,
+) -> str:
+    """Generate a plain-language weekly recommendation."""
+    rsi_str = f"{rsi:.0f}" if rsi is not None else "N/A"
+    change = this_week - last_week
+    direction = "up" if change > 0 else "down" if change < 0 else "flat"
+
+    if signal == "INVEST":
+        return (
+            f"Weekly net ({this_week:,.0f}) is {direction} from last week "
+            f"({last_week:,.0f}), RSI: {rsi_str}. Strong surplus — consider "
+            f"investing excess savings."
+        )
+    elif signal == "ALERT":
+        return (
+            f"Weekly net ({this_week:,.0f}) is {direction} from last week "
+            f"({last_week:,.0f}), RSI: {rsi_str}. Spending is elevated — "
+            f"review this week's discretionary expenses."
+        )
+    else:
+        return (
+            f"Weekly net ({this_week:,.0f}) is {direction} from last week "
+            f"({last_week:,.0f}), RSI: {rsi_str}. Cash flow is within "
+            f"normal range."
         )

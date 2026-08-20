@@ -156,3 +156,63 @@ class SpendingAlertsResponse(BaseModel):
     categories: list[CategorySpendingAlert]
     alert_count: int
     total_categories: int
+
+
+# ---------------------------------------------------------------------------
+# Weekly signals (Phase 2.7)
+# ---------------------------------------------------------------------------
+
+
+class WeeklyTrend(BaseModel):
+    week: str  # "2026-W23"
+    income: Decimal
+    expenses: Decimal
+    net: Decimal
+
+
+class WeeklyTrends(BaseModel):
+    date_from: date
+    date_to: date
+    currency: str
+    weeks: list[WeeklyTrend]
+
+
+class WeeklySignalDetail(BaseModel):
+    week: str
+    net: float
+    bb_upper: float | None
+    bb_middle: float | None
+    bb_lower: float | None
+    rsi: float | None
+
+
+class WeekComparison(BaseModel):
+    this_week_net: float
+    last_week_net: float
+    week_over_week_change: float
+    vs_4_weeks_ago: float | None
+
+
+class WeeklySignalsResponse(BaseModel):
+    currency: str
+    current_signal: SignalValue
+    rsi: float | None
+    bollinger: BollingerPosition
+    recommendation: str
+    weeks: list[WeeklySignalDetail]
+    comparison: WeekComparison
+
+
+class WeeklyForecastPoint(BaseModel):
+    week: str  # "2026-W35"
+    predicted: Decimal
+    lower: Decimal
+    upper: Decimal
+
+
+class WeeklyForecast(BaseModel):
+    currency: str
+    horizon_weeks: int
+    income: list[WeeklyForecastPoint]
+    expenses: list[WeeklyForecastPoint]
+    net: list[WeeklyForecastPoint]

@@ -26,13 +26,19 @@ from app.schemas.cashflow import (
     SpendingAlertsResponse,
     TransactionList,
     TransactionOut,
+    WeeklyForecast,
+    WeeklySignalsResponse,
+    WeeklyTrend,
+    WeeklyTrends,
 )
-from app.services.forecaster import forecast_cashflow
+from app.services.forecaster import forecast_cashflow, forecast_weekly
 from app.services.ta_analyzer import (
     MIN_MONTHS_REQUIRED,
     MIN_SPENDING_MONTHS_REQUIRED,
+    MIN_WEEKS_REQUIRED,
     analyze_savings_capacity,
     analyze_spending_trends,
+    analyze_weekly_signals,
 )
 
 logger = logging.getLogger(__name__)
@@ -444,6 +450,197 @@ async def cashflow_spending_alerts(
     result = analyze_spending_trends(category_data)
 
     return SpendingAlertsResponse(currency=currency, **result)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/weekly/trends
+# ---------------------------------------------------------------------------
+
+@router.get("/weekly/trends", response_model=WeeklyTrends)
+async def cashflow_weekly_trends(
+    date_from: date = Query(default=None),
+    date_to: date = Query(default=None),
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Weekly income vs expenses time series grouped by ISO week."""
+    d_from = date_from or _default_date_from()
+    d_to = date_to or _default_date_to()
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.date >= d_from,
+        Transaction.date <= d_to,
+        Transaction.currency == currency,
+    ]
+
+    year_col = extract("isoyear", Transaction.date).label("iso_yr")
+    week_col = extract("week", Transaction.date).label("iso_wk")
+
+    q = await db.execute(
+        select(
+            year_col,
+            week_col,
+            func.coalesce(func.sum(case((Transaction.amount > 0, Transaction.amount), else_=Decimal("0"))), Decimal("0")).label("income"),
+            func.coalesce(func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=Decimal("0"))), Decimal("0")).label("expenses"),
+        )
+        .where(*base_where)
+        .group_by(year_col, week_col)
+        .order_by(year_col, week_col)
+    )
+
+    weeks = []
+    for row in q.all():
+        week_str = f"{int(row.iso_yr)}-W{int(row.iso_wk):02d}"
+        income = row.income
+        expenses = row.expenses
+        weeks.append(WeeklyTrend(
+            week=week_str,
+            income=income,
+            expenses=expenses,
+            net=income - expenses,
+        ))
+
+    return WeeklyTrends(
+        date_from=d_from,
+        date_to=d_to,
+        currency=currency,
+        weeks=weeks,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/weekly/signals
+# ---------------------------------------------------------------------------
+
+@router.get("/weekly/signals", response_model=WeeklySignalsResponse)
+async def cashflow_weekly_signals(
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Weekly savings-capacity signals using BB(4w) + RSI(4w).
+
+    Analyzes weekly net cashflow with adapted TA windows.
+    Includes week-over-week comparison.
+    """
+    year_col = extract("isoyear", Transaction.date).label("iso_yr")
+    week_col = extract("week", Transaction.date).label("iso_wk")
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.currency == currency,
+    ]
+
+    q = await db.execute(
+        select(
+            year_col,
+            week_col,
+            func.coalesce(func.sum(case((Transaction.amount > 0, Transaction.amount), else_=Decimal("0"))), Decimal("0")).label("income"),
+            func.coalesce(func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=Decimal("0"))), Decimal("0")).label("expenses"),
+        )
+        .where(*base_where)
+        .group_by(year_col, week_col)
+        .order_by(year_col, week_col)
+    )
+    rows = q.all()
+
+    if len(rows) < MIN_WEEKS_REQUIRED:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": (
+                        f"Need at least {MIN_WEEKS_REQUIRED} weeks of data "
+                        f"for weekly signals, got {len(rows)}"
+                    ),
+                }
+            },
+        )
+
+    weekly_data = []
+    for row in rows:
+        week_str = f"{int(row.iso_yr)}-W{int(row.iso_wk):02d}"
+        income = float(row.income)
+        expenses = float(row.expenses)
+        weekly_data.append({
+            "week": week_str,
+            "week_start": week_str,
+            "income": income,
+            "expenses": expenses,
+            "net": income - expenses,
+        })
+
+    result = analyze_weekly_signals(weekly_data)
+
+    return WeeklySignalsResponse(currency=currency, **result)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/weekly/forecast
+# ---------------------------------------------------------------------------
+
+@router.get("/weekly/forecast", response_model=WeeklyForecast)
+async def cashflow_weekly_forecast(
+    horizon_weeks: int = Query(default=4, ge=1, le=12),
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Weekly forecast of future income/expenses."""
+    year_col = extract("isoyear", Transaction.date).label("iso_yr")
+    week_col = extract("week", Transaction.date).label("iso_wk")
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.currency == currency,
+    ]
+
+    q = await db.execute(
+        select(
+            year_col,
+            week_col,
+            func.coalesce(func.sum(case((Transaction.amount > 0, Transaction.amount), else_=Decimal("0"))), Decimal("0")).label("income"),
+            func.coalesce(func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=Decimal("0"))), Decimal("0")).label("expenses"),
+        )
+        .where(*base_where)
+        .group_by(year_col, week_col)
+        .order_by(year_col, week_col)
+    )
+    rows = q.all()
+
+    if len(rows) < 4:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": "Need at least 4 weeks of data for weekly forecasting",
+                }
+            },
+        )
+
+    weekly_data = [
+        {
+            "week": f"{int(row.iso_yr)}-W{int(row.iso_wk):02d}",
+            "income": float(row.income),
+            "expenses": float(row.expenses),
+            "net": float(row.income - row.expenses),
+        }
+        for row in rows
+    ]
+
+    result = forecast_weekly(weekly_data, horizon_weeks)
+
+    return WeeklyForecast(
+        currency=currency,
+        horizon_weeks=horizon_weeks,
+        income=result["income"],
+        expenses=result["expenses"],
+        net=result["net"],
+    )
 
 
 # ---------------------------------------------------------------------------

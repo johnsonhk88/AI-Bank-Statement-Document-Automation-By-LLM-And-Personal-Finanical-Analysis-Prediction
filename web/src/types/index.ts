@@ -205,6 +205,63 @@ export interface SpendingAlertsResponse {
   total_categories: number;
 }
 
+// --- Weekly signals (Phase 2.7) ---
+
+export interface WeeklyTrend {
+  week: string;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+export interface WeeklyTrends {
+  date_from: string;
+  date_to: string;
+  currency: string;
+  weeks: WeeklyTrend[];
+}
+
+export interface WeeklySignalDetail {
+  week: string;
+  net: number;
+  bb_upper: number | null;
+  bb_middle: number | null;
+  bb_lower: number | null;
+  rsi: number | null;
+}
+
+export interface WeekComparison {
+  this_week_net: number;
+  last_week_net: number;
+  week_over_week_change: number;
+  vs_4_weeks_ago: number | null;
+}
+
+export interface WeeklySignalsResponse {
+  currency: string;
+  current_signal: SignalValue;
+  rsi: number | null;
+  bollinger: BollingerPosition;
+  recommendation: string;
+  weeks: WeeklySignalDetail[];
+  comparison: WeekComparison;
+}
+
+export interface WeeklyForecastPoint {
+  week: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface WeeklyForecast {
+  currency: string;
+  horizon_weeks: number;
+  income: WeeklyForecastPoint[];
+  expenses: WeeklyForecastPoint[];
+  net: WeeklyForecastPoint[];
+}
+
 // --- Agent run types ---
 
 export interface AgentRunOut {
