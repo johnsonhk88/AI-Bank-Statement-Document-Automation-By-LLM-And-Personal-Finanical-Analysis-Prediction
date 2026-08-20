@@ -22,9 +22,12 @@ from app.schemas.cashflow import (
     CategoryAmount,
     LineItemOut,
     MonthlyTrend,
+    SavingsCapacityResponse,
     TransactionList,
     TransactionOut,
 )
+from app.services.forecaster import forecast_cashflow
+from app.services.ta_analyzer import MIN_MONTHS_REQUIRED, analyze_savings_capacity
 
 logger = logging.getLogger(__name__)
 
@@ -280,7 +283,6 @@ async def cashflow_forecast(
             "net": float(row.income - row.expenses),
         })
 
-    from app.services.forecaster import forecast_cashflow
     result = forecast_cashflow(monthly_data, horizon_months)
 
     return CashFlowForecast(
@@ -290,6 +292,71 @@ async def cashflow_forecast(
         expenses=result["expenses"],
         net=result["net"],
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/cashflow/signals
+# ---------------------------------------------------------------------------
+
+@router.get("/signals", response_model=SavingsCapacityResponse)
+async def cashflow_signals(
+    currency: str = Query(default="HKD"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Savings-capacity signals using Bollinger Bands + RSI on net cashflow.
+
+    Analyzes all historical monthly data to produce an investment signal:
+    INVEST (surplus momentum), HOLD (normal), or ALERT (deficit trend).
+    """
+    year_col = extract("year", Transaction.date).label("yr")
+    month_col = extract("month", Transaction.date).label("mo")
+
+    base_where = [
+        Transaction.owner_id == current_user.id,
+        Transaction.currency == currency,
+    ]
+
+    q = await db.execute(
+        select(
+            year_col,
+            month_col,
+            func.coalesce(func.sum(case((Transaction.amount > 0, Transaction.amount), else_=Decimal("0"))), Decimal("0")).label("income"),
+            func.coalesce(func.sum(case((Transaction.amount < 0, func.abs(Transaction.amount)), else_=Decimal("0"))), Decimal("0")).label("expenses"),
+        )
+        .where(*base_where)
+        .group_by(year_col, month_col)
+        .order_by(year_col, month_col)
+    )
+    rows = q.all()
+
+    if len(rows) < MIN_MONTHS_REQUIRED:
+        raise HTTPException(
+            400,
+            detail={
+                "error": {
+                    "code": "INSUFFICIENT_DATA",
+                    "message": (
+                        f"Need at least {MIN_MONTHS_REQUIRED} months of data "
+                        f"for savings signals, got {len(rows)}"
+                    ),
+                }
+            },
+        )
+
+    monthly_data = [
+        {
+            "month": f"{int(row.yr):04d}-{int(row.mo):02d}",
+            "income": float(row.income),
+            "expenses": float(row.expenses),
+            "net": float(row.income - row.expenses),
+        }
+        for row in rows
+    ]
+
+    result = analyze_savings_capacity(monthly_data)
+
+    return SavingsCapacityResponse(currency=currency, **result)
 
 
 # ---------------------------------------------------------------------------

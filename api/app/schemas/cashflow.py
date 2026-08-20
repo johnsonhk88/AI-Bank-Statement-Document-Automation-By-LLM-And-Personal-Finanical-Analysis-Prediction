@@ -1,6 +1,7 @@
 """Pydantic response schemas for cashflow API endpoints."""
 from datetime import date
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -87,3 +88,37 @@ class TransactionList(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+# ---------------------------------------------------------------------------
+# Savings-capacity signals (Phase 1 — TA integration)
+# ---------------------------------------------------------------------------
+
+
+class SignalMonthDetail(BaseModel):
+    month: str
+    net: float
+    bb_upper: float | None
+    bb_middle: float | None
+    bb_lower: float | None
+    rsi: float | None
+
+
+SignalValue = Literal["INVEST", "HOLD", "ALERT"]
+BBPosition = Literal[
+    "above_upper", "upper_half", "lower_half", "below_lower", "insufficient_data"
+]
+
+
+class BollingerPosition(BaseModel):
+    pband: float | None
+    position: BBPosition
+
+
+class SavingsCapacityResponse(BaseModel):
+    currency: str
+    current_signal: SignalValue
+    rsi: float | None
+    bollinger: BollingerPosition
+    recommendation: str
+    months: list[SignalMonthDetail]
