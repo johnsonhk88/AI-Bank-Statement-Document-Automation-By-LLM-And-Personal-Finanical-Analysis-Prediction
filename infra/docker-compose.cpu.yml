@@ -1,0 +1,55 @@
+# CPU-only override for local PC with llama.cpp on the host GPU.
+#
+# Machine: 64 GB RAM, 12 GB VRAM
+# llama.cpp server runs on HOST with GPU.
+# Docker containers run CPU-only, capped to ~20 GB total.
+#
+# Usage:
+#   cd infra
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up -d --build
+
+services:
+  postgres:
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  redis:
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  qdrant:
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/api.cpu.Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+    environment:
+      CUDA_VISIBLE_DEVICES: ""
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/api.cpu.Dockerfile
+    deploy:
+      resources:
+        limits:
+          memory: 8g
+    environment:
+      CUDA_VISIBLE_DEVICES: ""
+      WORKER_CONCURRENCY: "1"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

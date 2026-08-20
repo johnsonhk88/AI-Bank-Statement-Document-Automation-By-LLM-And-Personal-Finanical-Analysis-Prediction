@@ -1,13 +1,17 @@
-import datetime
+import datetime, logging, os
+from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.agents.registry import agent_registry
 from app.api.llm import get_llm_registry
+from app.config import settings
+from app.core.hashing import sha256_file
+from app.core.storage import save_upload
 from app.deps import get_db, get_current_user
 from app.models import AgentRun, AgentRunItem, Document, User
 from app.schemas.agent_run import (
@@ -15,10 +19,13 @@ from app.schemas.agent_run import (
     AgentRunItemOut,
     AgentRunListResponse,
     AgentRunOut,
+    BulkProcessResponse,
     RetryResponse,
 )
 from app.worker.celery_app import celery_app
 from app.worker.tasks import run_agent_item
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/agent-runs", tags=["agent-runs"])
 
@@ -94,6 +101,109 @@ async def create_agent_run(
     run = result.scalar_one()
 
     return run
+
+
+@router.post("/bulk-process", response_model=BulkProcessResponse, status_code=202)
+async def bulk_upload_and_process(
+    files: List[UploadFile] = File(...),
+    question: str = Form("Extract all transactions and provide a financial summary."),
+    agent: str = Form("crewai"),
+    llm_provider_id: str = Form("llamacpp"),
+    llm_model_id: str = Form("openai/local-model"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload multiple bank statement PDFs and immediately process them all."""
+    if not agent_registry.is_valid(agent):
+        raise HTTPException(422, detail={"error": {"code": "VALIDATION", "message": f"Unknown or disabled agent: {agent}"}})
+
+    try:
+        get_llm_registry().resolve(llm_provider_id, llm_model_id)
+    except ValueError as e:
+        raise HTTPException(422, detail={"error": {"code": "VALIDATION", "message": str(e)}})
+
+    doc_ids: list[UUID] = []
+    skipped = 0
+    errors: list[str] = []
+
+    for file in files:
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            errors.append(f"{file.filename or 'unknown'}: not a PDF, skipped")
+            continue
+        try:
+            storage_path = save_upload(file, current_user.id)
+        except ValueError as exc:
+            errors.append(f"{file.filename}: {exc}")
+            continue
+
+        full_path = settings.UPLOAD_ROOT.parent / storage_path
+        sha256 = sha256_file(str(full_path))
+        size_bytes = full_path.stat().st_size
+
+        existing = await db.execute(
+            select(Document).where(Document.content_sha256 == sha256, Document.deleted_at.is_(None))
+        )
+        dup = existing.scalar_one_or_none()
+        if dup:
+            os.remove(str(full_path))
+            skipped += 1
+            doc_ids.append(dup.id)
+            continue
+
+        doc = Document(
+            owner_id=current_user.id,
+            original_filename=file.filename,
+            storage_path=storage_path,
+            content_sha256=sha256,
+            mime_type=file.content_type or "application/pdf",
+            size_bytes=size_bytes,
+        )
+        db.add(doc)
+        await db.flush()
+        doc_ids.append(doc.id)
+
+    if not doc_ids:
+        await db.commit()
+        return BulkProcessResponse(
+            uploaded_count=0, skipped_duplicates=skipped, upload_errors=errors, agent_run=None,
+        )
+
+    run = AgentRun(
+        owner_id=current_user.id,
+        agent=agent,
+        question=question,
+        llm_provider=llm_provider_id,
+        llm_model=llm_model_id,
+    )
+    db.add(run)
+
+    items = []
+    for doc_id in doc_ids:
+        item = AgentRunItem(run_id=run.id, document_id=doc_id)
+        db.add(item)
+        items.append(item)
+
+    await db.flush()
+
+    for item in items:
+        task = run_agent_item.delay(str(item.id))
+        item.celery_task_id = task.id
+
+    await db.commit()
+
+    result = await db.execute(
+        select(AgentRun).options(selectinload(AgentRun.items)).where(AgentRun.id == run.id)
+    )
+    run = result.scalar_one()
+
+    logger.info("Bulk process: %d docs queued, %d skipped, %d errors", len(doc_ids), skipped, len(errors))
+
+    return BulkProcessResponse(
+        uploaded_count=len(doc_ids) - skipped,
+        skipped_duplicates=skipped,
+        upload_errors=errors,
+        agent_run=AgentRunOut.model_validate(run),
+    )
 
 
 @router.get("", response_model=AgentRunListResponse)

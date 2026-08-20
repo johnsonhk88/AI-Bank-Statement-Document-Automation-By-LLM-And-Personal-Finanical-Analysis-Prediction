@@ -13,4 +13,5 @@ class Document(Base, TimestampMixin, SoftDeleteMixin):
     mime_type: Mapped[str] = mapped_column(String(127), default="application/pdf")
     size_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    doc_type: Mapped[str] = mapped_column(String(20), nullable=False, default="bank_statement")
     qdrant_collection: Mapped[str | None] = mapped_column(String(64), nullable=True)

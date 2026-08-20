@@ -57,6 +57,94 @@ export interface AgentRunItemOut {
   finished_at: string | null;
 }
 
+// --- Cashflow types ---
+
+export interface CategoryAmount {
+  category: string;
+  amount: number;
+  percentage: number;
+  transaction_count: number;
+}
+
+export interface CashFlowSummary {
+  date_from: string;
+  date_to: string;
+  currency: string;
+  total_income: number;
+  total_expenses: number;
+  net: number;
+  transaction_count: number;
+  top_expense_categories: CategoryAmount[];
+}
+
+export interface CashFlowCategories {
+  date_from: string;
+  date_to: string;
+  currency: string;
+  categories: CategoryAmount[];
+}
+
+export interface MonthlyTrend {
+  month: string;
+  income: number;
+  expenses: number;
+  net: number;
+}
+
+export interface CashFlowTrends {
+  date_from: string;
+  date_to: string;
+  currency: string;
+  months: MonthlyTrend[];
+}
+
+export interface ForecastPoint {
+  month: string;
+  predicted: number;
+  lower: number;
+  upper: number;
+}
+
+export interface CashFlowForecast {
+  currency: string;
+  horizon_months: number;
+  income: ForecastPoint[];
+  expenses: ForecastPoint[];
+  net: ForecastPoint[];
+}
+
+export interface LineItemOut {
+  id: string;
+  item_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  sub_category: string;
+}
+
+export interface CashFlowTransaction {
+  id: string;
+  date: string;
+  description: string;
+  merchant: string;
+  amount: number;
+  balance: number | null;
+  currency: string;
+  category: string;
+  receipt_id: string | null;
+  match_confidence: number | null;
+  line_items: LineItemOut[];
+}
+
+export interface TransactionList {
+  items: CashFlowTransaction[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// --- Agent run types ---
+
 export interface AgentRunOut {
   id: string;
   agent: string;

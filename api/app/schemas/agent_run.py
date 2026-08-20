@@ -44,3 +44,10 @@ class AgentRunListResponse(BaseModel):
 
 class RetryResponse(BaseModel):
     retried_item_ids: list[UUID]
+
+
+class BulkProcessResponse(BaseModel):
+    uploaded_count: int
+    skipped_duplicates: int
+    upload_errors: list[str]
+    agent_run: AgentRunOut | None = None

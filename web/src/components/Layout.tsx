@@ -24,6 +24,12 @@ export function Layout() {
             >
               New Batch
             </Link>
+            <Link
+              to="/cashflow"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Cash Flow
+            </Link>
           </div>
           <div className="flex items-center gap-4">
             {user && (

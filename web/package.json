@@ -17,6 +17,7 @@
     "react-router-dom": "^6.26.2",
     "@tanstack/react-query": "^5.56.2",
     "zustand": "^5.0.0",
+    "recharts": "^2.12.7",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0"
   },

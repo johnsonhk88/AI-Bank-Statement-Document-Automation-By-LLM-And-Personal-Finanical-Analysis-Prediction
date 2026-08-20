@@ -34,7 +34,8 @@ class LLMProviderRegistry:
             if p.id == provider_id:
                 for m in p.models:
                     if m.id == model_id:
-                        key = os.environ.get(p.api_key_env, "lm-studio" if p.kind == "local" else "")
+                        default_key = "no-key" if p.kind == "local" else ""
+                        key = os.environ.get(p.api_key_env, default_key) if p.api_key_env else default_key
                         if p.api_key_env and not key and p.kind != "local":
                             raise ValueError(f"API key not set: {p.api_key_env}")
                         return m.id, p.base_url or "", key

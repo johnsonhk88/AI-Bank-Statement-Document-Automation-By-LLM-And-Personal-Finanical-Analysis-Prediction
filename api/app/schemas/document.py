@@ -14,3 +14,9 @@ class DocumentOut(BaseModel):
 class DocumentListResponse(BaseModel):
     items: list[DocumentOut]
     total: int
+
+
+class BulkUploadResponse(BaseModel):
+    uploaded: list[DocumentOut]
+    skipped_duplicates: int
+    errors: list[str]

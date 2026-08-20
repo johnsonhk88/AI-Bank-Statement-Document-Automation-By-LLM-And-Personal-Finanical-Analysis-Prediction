@@ -29,6 +29,15 @@ providers:
       - id: gemini/gemini-2.5-flash
         display_name: Gemini 2.5 Flash
 
+  - id: llamacpp
+    display_name: llama.cpp Server (Local)
+    kind: local
+    base_url: http://host.docker.internal:8080/v1
+    api_key_env: LLAMACPP_API_KEY
+    models:
+      - id: openai/local-model
+        display_name: llama.cpp Default Model
+
   - id: ollama
     display_name: Ollama (Local)
     kind: local

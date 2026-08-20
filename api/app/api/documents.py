@@ -1,4 +1,5 @@
-import datetime, os
+import datetime, logging, os
+from typing import List
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
@@ -8,7 +9,9 @@ from app.core.storage import save_upload
 from app.config import settings
 from app.deps import get_db, get_current_user
 from app.models import Document, AgentRunItem, User
-from app.schemas.document import DocumentOut, DocumentListResponse
+from app.schemas.document import BulkUploadResponse, DocumentOut, DocumentListResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
 
@@ -63,6 +66,66 @@ async def upload_document(
         deduplicated=False,
         created_at=doc.created_at,
     )
+
+
+@router.post("/bulk", response_model=BulkUploadResponse, status_code=201)
+async def bulk_upload_documents(
+    files: List[UploadFile] = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    uploaded: list[DocumentOut] = []
+    skipped = 0
+    errors: list[str] = []
+
+    for file in files:
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            errors.append(f"{file.filename or 'unknown'}: not a PDF, skipped")
+            continue
+
+        try:
+            storage_path = save_upload(file, current_user.id)
+        except ValueError as exc:
+            errors.append(f"{file.filename}: {exc}")
+            continue
+
+        full_path = settings.UPLOAD_ROOT.parent / storage_path
+        sha256 = sha256_file(str(full_path))
+        size_bytes = full_path.stat().st_size
+
+        existing = await db.execute(
+            select(Document).where(Document.content_sha256 == sha256, Document.deleted_at.is_(None))
+        )
+        dup = existing.scalar_one_or_none()
+        if dup:
+            os.remove(str(full_path))
+            skipped += 1
+            logger.info("Duplicate skipped: %s (sha256=%s)", file.filename, sha256[:16])
+            continue
+
+        doc = Document(
+            owner_id=current_user.id,
+            original_filename=file.filename,
+            storage_path=storage_path,
+            content_sha256=sha256,
+            mime_type=file.content_type or "application/pdf",
+            size_bytes=size_bytes,
+        )
+        db.add(doc)
+        await db.flush()
+
+        uploaded.append(DocumentOut(
+            id=str(doc.id),
+            original_filename=doc.original_filename,
+            mime_type=doc.mime_type,
+            size_bytes=doc.size_bytes,
+            page_count=doc.page_count,
+            deduplicated=False,
+            created_at=doc.created_at,
+        ))
+
+    await db.commit()
+    return BulkUploadResponse(uploaded=uploaded, skipped_duplicates=skipped, errors=errors)
 
 
 @router.get("", response_model=DocumentListResponse)
