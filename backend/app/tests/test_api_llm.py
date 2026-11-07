@@ -12,3 +12,5 @@ async def test_llm_models_returns_providers():
         data = resp.json()
         assert "providers" in data
         assert len(data["providers"]) >= 1
+        ids = {p["id"] for p in data["providers"]}
+        assert {"lm-studio", "ollama", "vllm", "sglang", "strata"} <= ids

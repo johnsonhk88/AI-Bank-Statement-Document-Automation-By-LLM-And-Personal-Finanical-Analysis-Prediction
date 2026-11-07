@@ -22,8 +22,22 @@ export function Layout() {
               to="/batches/new"
               className="text-sm text-gray-600 hover:text-gray-900"
             >
-              New Batch
+              New analysis
             </Link>
+            <Link
+              to="/dashboard"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Dashboard
+            </Link>
+            <a
+              href="http://localhost:3001/d/bankai-local-llm"
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              GPU monitor
+            </a>
           </div>
           <div className="flex items-center gap-4">
             {user && (

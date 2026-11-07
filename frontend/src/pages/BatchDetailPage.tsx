@@ -83,6 +83,18 @@ export default function BatchDetailPage() {
             <span className="text-gray-900">{new Date(batch.created_at).toLocaleString()}</span>
           </div>
         </div>
+        <ol className="mt-4 flex flex-wrap gap-2 text-xs text-gray-600">
+          <li className="rounded-full bg-green-50 px-3 py-1">1. Source selected</li>
+          <li className={`rounded-full px-3 py-1 ${batch.status === "pending" ? "bg-gray-100" : "bg-green-50"}`}>
+            2. Queued
+          </li>
+          <li className={`rounded-full px-3 py-1 ${["running", "succeeded", "partial"].includes(batch.status) ? "bg-green-50" : "bg-gray-100"}`}>
+            3. RAG / analysis
+          </li>
+          <li className={`rounded-full px-3 py-1 ${["succeeded", "partial"].includes(batch.status) ? "bg-green-50" : "bg-gray-100"}`}>
+            4. Saved in Postgres
+          </li>
+        </ol>
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4">

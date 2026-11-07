@@ -14,6 +14,8 @@ This guide walks through **setup, running, and testing** the full-stack v1 appli
 
 **Design:** [docs/superpowers/specs/2026-07-25-full-stack-app-design.md](../superpowers/specs/2026-07-25-full-stack-app-design.md)
 **Plan:** [docs/superpowers/plans/2026-07-25-full-stack-app.md](../superpowers/plans/2026-07-25-full-stack-app.md)
+**Local LLMs + Grafana:** [local-llm-and-monitoring.md](local-llm-and-monitoring.md)
+**MCP stdio:** [mcp.md](mcp.md)
 
 ---
 
@@ -491,3 +493,5 @@ curl -s http://localhost:8000/api/docs   # Swagger UI URL (open in browser)
 - **Multi-harness agents guide:** [docs/guides/multi-harness-agents-guide.md](./multi-harness-agents-guide.md) — using the experiment harnesses (Deep Agents, CrewAI notebook, Hermes)
 - **Multi-harness agents design:** [docs/superpowers/specs/2026-07-20-multi-harness-agents-design.md](../superpowers/specs/2026-07-20-multi-harness-agents-design.md)
 - **Root README roadmap:** [README.md](../../README.md#roadmap)
+- **Local LLMs (vLLM / SGLang / Strata) + Grafana:** [local-llm-and-monitoring.md](./local-llm-and-monitoring.md)
+- **MCP stdio server:** [mcp.md](./mcp.md)

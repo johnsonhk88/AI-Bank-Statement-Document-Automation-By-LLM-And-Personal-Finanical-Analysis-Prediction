@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD_HASH: str = ""
     EMBEDDING_MODEL: str = "intfloat/multilingual-e5-small"
+    GRAFANA_URL: str = "http://localhost:3001"
     UPLOAD_ROOT: Path = Path(__file__).resolve().parent.parent.parent.parent / "data" / "uploads"
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

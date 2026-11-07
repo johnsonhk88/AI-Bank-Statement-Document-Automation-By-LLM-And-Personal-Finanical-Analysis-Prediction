@@ -5,6 +5,6 @@ export function useLLMModels() {
   return useQuery({
     queryKey: ["llm-models"],
     queryFn: listLLMModels,
-    refetchInterval: 60000,
+    refetchInterval: 15000,
   });
 }

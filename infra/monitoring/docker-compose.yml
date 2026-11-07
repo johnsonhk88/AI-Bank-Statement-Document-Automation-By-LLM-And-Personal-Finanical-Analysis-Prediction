@@ -1,0 +1,65 @@
+# Prometheus + Grafana for local LLM GPU / CPU / RAM.
+# Scrapes host DCGM (:9400) and node-exporter (:9100) if they already run
+# (this machine often has them). Does NOT bind 3000/9400/9100.
+#
+#   docker compose -f infra/monitoring/docker-compose.yml up -d
+# Grafana: http://localhost:3001  (admin / admin)
+# Dashboard: http://localhost:3001/d/bankai-local-llm
+#
+# Optional: start exporters here if nothing else owns those ports:
+#   docker compose -f infra/monitoring/docker-compose.yml --profile exporters up -d
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  dcgm-exporter:
+    profiles: [exporters]
+    image: nvidia/dcgm-exporter:3.3.8-3.6.0-ubuntu22.04
+    gpus: all
+    cap_add:
+      - SYS_ADMIN
+    ports:
+      - "9400:9400"
+    restart: unless-stopped
+
+  node-exporter:
+    profiles: [exporters]
+    image: prom/node-exporter:v1.8.2
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/rootfs
+    ports:
+      - "9100:9100"
+    restart: unless-stopped

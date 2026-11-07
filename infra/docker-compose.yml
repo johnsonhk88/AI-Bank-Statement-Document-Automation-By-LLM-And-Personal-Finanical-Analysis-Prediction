@@ -42,6 +42,8 @@ services:
     build:
       context: ..
       dockerfile: infra/backend.Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +77,10 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
+      SGLANG_API_KEY: ${SGLANG_API_KEY:-}
+      STRATA_API_KEY: ${STRATA_API_KEY:-}
+      GRAFANA_URL: ${GRAFANA_URL:-http://localhost:3001}
     ports:
       - "8000:8000"
     command: >
@@ -85,6 +91,8 @@ services:
     build:
       context: ..
       dockerfile: infra/backend.Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -118,6 +126,9 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      VLLM_API_KEY: ${VLLM_API_KEY:-}
+      SGLANG_API_KEY: ${SGLANG_API_KEY:-}
+      STRATA_API_KEY: ${STRATA_API_KEY:-}
     command: >
       sh -c "cd /app/backend && celery -A app.worker.celery_app worker --loglevel=info --concurrency=2"
 

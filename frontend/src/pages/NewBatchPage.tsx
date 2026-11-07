@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { createAgentRun } from "../api/agentRuns";
 import { useLLMModels } from "../hooks/useLLMModels";
 import PdfMultiDropzone from "../components/PdfMultiDropzone";
+import ExistingDocumentPicker from "../components/ExistingDocumentPicker";
 import AgentDropdown from "../components/AgentDropdown";
 import ModelDropdown from "../components/ModelDropdown";
 import type { DocumentOut } from "../types";
 
 const PROVIDER_KEY = "bankai-provider-id";
 const MODEL_KEY = "bankai-model-id";
+const DEFAULT_QUESTION =
+  "Produce a full analysis report: opening and closing balance, total credits and debits, notable transactions, and a short summary.";
 
 export default function NewBatchPage() {
   const navigate = useNavigate();
@@ -16,12 +19,14 @@ export default function NewBatchPage() {
   const providers = data?.providers ?? [];
 
   const [selectedDocs, setSelectedDocs] = useState<DocumentOut[]>([]);
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(DEFAULT_QUESTION);
   const [agent, setAgent] = useState("crewai");
   const [providerId, setProviderId] = useState<string>("");
   const [modelId, setModelId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedProvider = providers.find((p) => p.id === providerId);
 
   useEffect(() => {
     if (providers.length === 0) return;
@@ -100,14 +105,30 @@ export default function NewBatchPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">New Batch</h1>
+      <h1 className="mb-2 text-2xl font-bold text-gray-900">New analysis</h1>
+      <ol className="mb-6 flex flex-wrap gap-2 text-xs text-gray-600">
+        <li className="rounded-full bg-indigo-50 px-3 py-1">1. Source PDF</li>
+        <li className="rounded-full bg-indigo-50 px-3 py-1">2. LLM engine</li>
+        <li className="rounded-full bg-indigo-50 px-3 py-1">3. Question</li>
+        <li className="rounded-full bg-indigo-50 px-3 py-1">4. RAG + report → Postgres</li>
+      </ol>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700">
-            Upload PDFs
+            Upload new PDFs
           </label>
           <PdfMultiDropzone
+            selectedDocs={selectedDocs}
+            onDocsChange={setSelectedDocs}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Or select existing statements
+          </label>
+          <ExistingDocumentPicker
             selectedDocs={selectedDocs}
             onDocsChange={setSelectedDocs}
           />
@@ -129,6 +150,19 @@ export default function NewBatchPage() {
             modelId={modelId}
             onProviderChange={handleProviderChange}
           />
+          {selectedProvider?.kind === "local" && (
+            <p className="mt-2 text-xs text-gray-500">
+              Local engine — GPU/CPU/RAM:{" "}
+              <a
+                className="text-indigo-600 hover:underline"
+                href="http://localhost:3001/d/bankai-local-llm"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Grafana dashboard
+              </a>
+            </p>
+          )}
         </div>
 
         <div>
@@ -143,7 +177,6 @@ export default function NewBatchPage() {
             rows={4}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="e.g. What are my total debits this month?"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           />
         </div>
@@ -159,7 +192,7 @@ export default function NewBatchPage() {
           disabled={!canSubmit}
           className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {submitting ? "Submitting..." : "Submit"}
+          {submitting ? "Queuing RAG + report..." : "Run analysis"}
         </button>
       </form>
     </div>

@@ -7,7 +7,7 @@
 [![LiteLLM](https://img.shields.io/badge/LiteLLM-Local%20%2B%20Cloud-orange?style=for-the-badge)](https://github.com/BerriAI/litellm)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-> **Intelligent document automation for bank statements** — Extract, structure, analyze, and query financial data from PDFs using **YOLO + OCR + LLM**, with **parallel agent harnesses** (CrewAI, Deep Agents, Hermes) and **local LLMs** (LM Studio / Ollama).
+> **Intelligent document automation for bank statements** — Extract, structure, analyze, and query financial data from PDFs using **YOLO + OCR + LLM**, with **parallel agent harnesses** (CrewAI, Deep Agents, Hermes) and **local LLMs** (vLLM, SGLang, Strata, LM Studio, Ollama).
 
 ---
 
@@ -16,7 +16,10 @@
 - **Advanced PDF Parsing** — YOLO layout detection + OCR + LLM-based table extraction
 - **Multi-harness agents** — CrewAI baseline, LangChain **Deep Agents** (agentskills.io), **Hermes** (Docker sandbox)
 - **Agent Skills** — Domain skills for bank-statement parsing, PII redaction, financial analysis, RAG, and output format
-- **Local LLM First** — LM Studio and Ollama via LiteLLM (async `acompletion`)
+- **Local LLM First** — vLLM, SGLang, Strata, LM Studio, Ollama via LiteLLM; frontend picks a live `/v1/models` list
+- **GPU monitoring** — Prometheus + Grafana (DCGM + node-exporter), same pattern as the engine repos
+- **History dashboard** — quarterly / annual totals from Postgres, Markdown + print-to-PDF
+- **MCP stdio** — Claude Desktop / Cursor tools over the BankAI API
 - **Reasoning Model Support** — Handles models that return content in `reasoning_content`
 - **Secure RAG Pipeline** — PII redaction **before** embedding into vector database (Qdrant / Chroma)
 - **Financial Intelligence** — Income/expense categorization, trend analysis, natural language querying
@@ -27,13 +30,36 @@
 
 ---
 
-## Important Notes for Local LLMs (LM Studio / Ollama)
+## Local LLMs (vLLM / SGLang / Strata / LM Studio / Ollama)
 
-When using **local models** via LM Studio or Ollama:
+BankAI does not start the GPU engine. Run one of these, then select it in **New analysis**:
 
-- **Model size**: Prefer **9B+** parameters (e.g. Qwen2.5-14B, Qwen3-27B, Gemma-2-9B, Llama-3.1-8B+). Smaller models reduce quality.
-- **Context length**: **16K+** tokens (recommended **32K+**). Low context drops agent instructions.
-- **JSON output**: Local models often fail strict JSON. Prefer **Markdown** reports; post-process with a second call or `instructor` if needed.
+| Engine | GitHub | Default URL (host) | BankAI provider |
+|--------|--------|--------------------|-----------------|
+| **vLLM** | [docker-vllm-serving-engine](https://github.com/johnsonhk88/docker-vllm-serving-engine) | `http://127.0.0.1:8001/v1` | `vllm` |
+| **SGLang** | [sglang-llm-inference-engine](https://github.com/johnsonhk88/sglang-llm-inference-engine) | `http://127.0.0.1:30000/v1` | `sglang` |
+| **Strata** | [strata-llm-inference-engine](https://github.com/johnsonhk88/strata-llm-inference-engine) | `http://127.0.0.1:8080/v1` | `strata` |
+| LM Studio | — | `http://127.0.0.1:1234/v1` | `lm-studio` |
+| Ollama | — | `http://127.0.0.1:11434` | `ollama` |
+
+**Port clash:** BankAI FastAPI uses **`:8000`**. Start vLLM with `--port 8001`.
+
+When the engine is up, `GET /api/llm-models` fills the dropdown from live `/v1/models`. YAML is the fallback when the engine is down.
+
+GPU / CPU / RAM (Prometheus + Grafana, same layout as the vLLM/SGLang `monitoring/` folders):
+
+```bash
+docker compose -f infra/monitoring/docker-compose.yml up -d
+# Grafana http://localhost:3001  (admin/admin)  dashboard /d/bankai-local-llm
+```
+
+Step-by-step: **[docs/guides/local-llm-and-monitoring.md](docs/guides/local-llm-and-monitoring.md)** · MCP: **[docs/guides/mcp.md](docs/guides/mcp.md)**
+
+Quality notes for local models:
+
+- **Model size**: Prefer **9B+** parameters. Smaller models reduce quality.
+- **Context length**: **16K+** tokens (recommended **32K+**).
+- **JSON output**: Prefer **Markdown** reports; post-process if you need strict JSON.
 
 ---
 
@@ -42,7 +68,8 @@ When using **local models** via LM Studio or Ollama:
 | Component | Technology |
 |-----------|------------|
 | **API** | FastAPI, SQLAlchemy 2.0 (async), Alembic, Pydantic v2 |
-| **LLM Orchestration** | LiteLLM (LM Studio, Ollama, OpenAI, DeepSeek, etc.) |
+| **LLM Orchestration** | LiteLLM (vLLM, SGLang, Strata, LM Studio, Ollama, OpenAI, …) |
+| **GPU metrics** | Prometheus + Grafana + DCGM + node-exporter (`infra/monitoring/`) |
 | **Agent Frameworks** | CrewAI + Skills · Deep Agents (LangGraph) · Hermes (Docker sandbox) |
 | **Document Processing** | PyMuPDF, YOLO, OCR |
 | **Vector Database** | Qdrant, Chroma |
@@ -71,6 +98,7 @@ AI-Bank-Statement-Document-Automation/
 │   └── config/llm_providers.yaml
 ├── frontend/                            # Production React 18 + Vite 5 SPA
 ├── infra/                               # Docker compose + Dockerfiles
+│   └── monitoring/                      # Prometheus + Grafana (GPU/CPU/RAM)
 ├── skills/                              # Canonical domain skills (edit here only)
 │   ├── bank-statement-parsing/
 │   ├── financial-analysis/
@@ -290,7 +318,6 @@ docker compose exec backend python -c "import torch; print(torch.cuda.is_availab
 
 - Wire Deep Agents and Hermes adapters into the live API (CrewAI is the only enabled harness today)
 - Multi-document collections / workspaces
-- Advanced financial forecasting
 - Kubernetes deployment
 - Stronger PII (names/addresses) and production embeddings for Deep Agents
 
