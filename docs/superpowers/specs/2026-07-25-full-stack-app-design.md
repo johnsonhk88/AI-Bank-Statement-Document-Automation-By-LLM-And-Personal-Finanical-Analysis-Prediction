@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-25
 **Status:** Approved
-**Layout note (2026-11-07):** Structure simplification superseded frozen `backend/` / `frontend/` paths. Canonical skills live in `skills/`; CrewAI notebook in `notebooks/ai_agent_skills_dev.ipynb`; experiments under `notebooks/` + `agents/`. Production is `api/` + `web/` + `infra/`.
+**Layout note (2026-11-07):** Production folders are `backend/` (FastAPI) and `frontend/` (React SPA). HTTP routes stay under `/api/*`. Canonical skills live in `skills/`; CrewAI notebook in `notebooks/ai_agent_skills_dev.ipynb`. Historical `api/` / `web/` paths in this snapshot mean today's `backend/` / `frontend/`.
 **Related:**
 - `docs/superpowers/specs/2026-07-20-multi-harness-agents-design.md` (Approved) — multi-harness design (CrewAI / Deep Agents / Hermes) this app wraps
 - `backend/app/core/ai_agent_skills_dev.ipynb` — CrewAI baseline ported by `api/agents/crewai/adapter.py`

@@ -38,10 +38,10 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
+  backend:
     build:
       context: ..
-      dockerfile: infra/api.Dockerfile
+      dockerfile: infra/backend.Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,13 +78,13 @@ services:
     ports:
       - "8000:8000"
     command: >
-      sh -c "cd /app/api && alembic -c alembic.ini upgrade head &&
+      sh -c "cd /app/backend && alembic -c alembic.ini upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   worker:
     build:
       context: ..
-      dockerfile: infra/api.Dockerfile
+      dockerfile: infra/backend.Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,16 +119,16 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     command: >
-      sh -c "cd /app/api && celery -A app.worker.celery_app worker --loglevel=info --concurrency=2"
+      sh -c "cd /app/backend && celery -A app.worker.celery_app worker --loglevel=info --concurrency=2"
 
-  web:
+  frontend:
     build:
-      context: ../web
+      context: ../frontend
       dockerfile: Dockerfile
     profiles:
       - prod
     depends_on:
-      - api
+      - backend
     ports:
       - "80:80"
 

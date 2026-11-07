@@ -59,17 +59,17 @@ When using **local models** via LM Studio or Ollama:
 
 ```text
 AI-Bank-Statement-Document-Automation/
-├── api/                                 # Production FastAPI backend
-│   ├── app/                             # Normal Python package (app.*)
+├── backend/                             # Production FastAPI service (HTTP under /api/*)
+│   ├── app/                             # Python package (app.*)
 │   │   ├── agents/                      # Adapters (CrewAI live; Deep Agents / Hermes stubs)
-│   │   ├── api/                         # REST: auth, llm, documents, agent_runs
+│   │   ├── api/                         # REST routers: auth, llm, documents, agent_runs
 │   │   ├── core/                        # JWT + bcrypt, storage
 │   │   ├── db/ models/ schemas/
 │   │   ├── tests/
 │   │   └── worker/                      # Celery tasks + runner
 │   ├── alembic/
 │   └── config/llm_providers.yaml
-├── web/                                 # Production React 18 + Vite 5 SPA
+├── frontend/                            # Production React 18 + Vite 5 SPA
 ├── infra/                               # Docker compose + Dockerfiles
 ├── skills/                              # Canonical domain skills (edit here only)
 │   ├── bank-statement-parsing/
@@ -91,13 +91,13 @@ AI-Bank-Statement-Document-Automation/
 └── README.md
 ```
 
-**Skills policy:** edit `skills/`, then run `python scripts/sync_skills.py --apply`. Do not edit harness copies by hand. The API loads `skills/` directly.
+**Skills policy:** edit `skills/`, then run `python scripts/sync_skills.py --apply`. Do not edit harness copies by hand. The backend loads `skills/` directly.
 
 ---
 
 ## Multi-harness agents (experimental)
 
-Parallel frameworks for the same bank-statement workflow. Shared inputs live in `data/`. Each harness has its **own skill copies** (no auto-sync).
+Parallel frameworks for the same bank-statement workflow. Shared inputs live in `data/`. Each harness has a **generated** skill copy (`python scripts/sync_skills.py --apply`).
 
 | Harness | Path | Skills | How to run |
 |---------|------|--------|------------|
@@ -246,7 +246,7 @@ cd infra && DOCKER_BUILDKIT=1 docker compose --profile prod up -d --build
 
 # 5. For development (API with reload + Vite HMR on :5173):
 cd infra && docker compose up -d           # backend services
-cd web && npm install && npm run dev        # frontend dev server
+cd frontend && npm install && npm run dev   # frontend dev server
 ```
 
 ### GPU Configuration
@@ -271,18 +271,18 @@ docker run --rm --gpus all nvidia/cuda:12.2.1-base-ubuntu22.04 nvidia-smi
 cd infra && DOCKER_BUILDKIT=1 docker compose --profile prod up -d --build
 
 # 4. Verify PyTorch sees the GPU inside the container
-docker compose exec api python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+docker compose exec backend python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
 
-> **Note:** Experiments live under `notebooks/` and `agents/`. Production code is `api/` + `web/` + `infra/` + `skills/`.
+> **Note:** Experiments live under `notebooks/` and `agents/`. Production code is `backend/` + `frontend/` + `infra/` + `skills/`. HTTP routes stay under `/api/*`.
 
 ### Developer notes
 
-- **`app` is a normal package:** `api/app/__init__.py` exists. Containers set `PYTHONPATH=/app/api:/app/skills` so `from app...` and `from crewai_skills_loader import load_skills` both work.
-- **Skills:** edit `skills/` only, then `python scripts/sync_skills.py --apply`. The API does not depend on harness copies.
+- **`app` is a normal package:** `backend/app/__init__.py` exists. Containers set `PYTHONPATH=/app/backend:/app/skills` so `from app...` and `from crewai_skills_loader import load_skills` both work.
+- **Skills:** edit `skills/` only, then `python scripts/sync_skills.py --apply`. The backend does not depend on harness copies.
 - **passlib / bcrypt:** The Docker image pins `bcrypt<4.1` because passlib 1.7.4 is incompatible with bcrypt ≥ 4.1 (`bcrypt.__about__` removed). If upgrading passlib, retest login flow.
 - **Qdrant healthcheck** uses `/proc/net/tcp` instead of `curl` because the `qdrant/qdrant` minimal image ships without curl or wget.
-- **Worker CWD:** The worker service `cd /app/api` then runs `celery -A app.worker.celery_app`.
+- **Worker CWD:** The worker service `cd /app/backend` then runs `celery -A app.worker.celery_app`.
 
 ---
 

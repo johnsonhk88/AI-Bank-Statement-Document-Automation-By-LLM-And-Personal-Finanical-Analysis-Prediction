@@ -6,7 +6,7 @@
 - Canonical skills: `skills/` (repo root) + `skills/crewai_skills_loader.py`
 - This folder's `skills/` is a **generated copy**. Edit the root `skills/` tree, then `python scripts/sync_skills.py --apply`.
 
-The production API (`api/app/agents/crewai/adapter.py`) loads canonical `skills/` directly.
+The production backend (`backend/app/agents/crewai/adapter.py`) loads canonical `skills/` directly.
 
 ## Run baseline
 

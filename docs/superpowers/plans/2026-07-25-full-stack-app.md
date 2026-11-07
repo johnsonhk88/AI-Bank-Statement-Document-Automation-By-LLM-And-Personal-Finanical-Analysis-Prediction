@@ -1,6 +1,6 @@
 # Full-Stack App Implementation Plan
 
-> **Layout note (2026-11-07):** Structure simplification superseded `backend/` / PEP 420 namespace paths. See `docs/superpowers/specs` layout notes and repo-root `skills/`. Historical steps below are a snapshot of how v1 was built.
+> **Layout note (2026-11-07):** Production folders are `backend/` (FastAPI) and `frontend/` (React SPA). HTTP routes stay under `/api/*`. Historical `api/` / `web/` steps in this snapshot mean today's `backend/` / `frontend/`.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 

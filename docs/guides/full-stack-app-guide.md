@@ -1,13 +1,13 @@
 # Full-Stack App — Step-by-Step Run & Test Guide
 
-This guide walks through **setup, running, and testing** the full-stack v1 application under `api/` + `web/` + `infra/`.
+This guide walks through **setup, running, and testing** the full-stack v1 application under `backend/` + `frontend/` + `infra/`.
 
 | Component | Path | Tech | Port |
 |-----------|------|------|------|
-| **API** | `api/` | FastAPI async + SQLAlchemy 2.0 + Alembic | `8000` (internal; proxied via nginx in prod) |
-| **Worker** | `api/app/worker/` | Celery (prefork) | — (no port) |
-| **Frontend** | `web/` | React 18 + Vite 5 + Tailwind | `5173` (dev only) |
-| **Nginx** | `web/nginx.conf` | Serves built SPA + proxies `/api/*` | `80` (prod only) |
+| **Backend** | `backend/` | FastAPI async + SQLAlchemy 2.0 + Alembic | `8000` (internal; proxied via nginx in prod) |
+| **Worker** | `backend/app/worker/` | Celery (prefork) | — (no port) |
+| **Frontend** | `frontend/` | React 18 + Vite 5 + Tailwind | `5173` (dev only) |
+| **Nginx** | `frontend/nginx.conf` | Serves built SPA + proxies `/api/*` | `80` (prod only) |
 | **Postgres** | compose | 16-alpine | `5432` |
 | **Redis** | compose | 7-alpine | `6379` |
 | **Qdrant** | compose | v1.13.4 | `6333` |
@@ -66,7 +66,7 @@ python -c "from passlib.context import CryptContext; print(CryptContext(schemes=
 grep -E '^(JWT_SECRET|ADMIN_PASSWORD_HASH)=' infra/.env
 ```
 
-**File reference:** `infra/.env` is gitignored. `infra/.env.example` is the committed template with comments for every field. LLM provider catalog lives at `api/config/llm_providers.yaml` — edit that file to add/remove providers and models; no migration needed.
+**File reference:** `infra/.env` is gitignored. `infra/.env.example` is the committed template with comments for every field. LLM provider catalog lives at `backend/config/llm_providers.yaml` — edit that file to add/remove providers and models; no migration needed.
 
 ---
 
@@ -78,8 +78,8 @@ grep -E '^(JWT_SECRET|ADMIN_PASSWORD_HASH)=' infra/.env
 | `6379` | Redis | Always | Celery broker + result backend |
 | `6333` | Qdrant | Always | Also serves dashboard UI at `http://localhost:6333/dashboard` |
 | `8000` | FastAPI | Always | Swagger at `http://localhost:8000/api/docs` |
-| `5173` | Vite dev server | Dev profile only | Hot Module Replacement; proxies `/api` to `http://api:8000` |
-| `80` | Nginx | Prod profile only | Serves built SPA + reverse-proxies `/api/*` → `api:8000` |
+| `5173` | Vite dev server | Dev profile only | Hot Module Replacement; proxies `/api` to `http://backend:8000` |
+| `80` | Nginx | Prod profile only | Serves built SPA + reverse-proxies `/api/*` → `backend:8000` |
 
 ---
 
@@ -96,7 +96,7 @@ curl http://localhost:8000/api/health | python -m json.tool
 # Expected: {"status":"ok","db":"ok","redis":"ok","qdrant":"ok"}
 
 # Run the frontend (in a separate terminal)
-cd web && npm install && npm run dev
+cd frontend && npm install && npm run dev
 # Open http://localhost:5173
 ```
 
@@ -104,7 +104,7 @@ cd web && npm install && npm run dev
 
 ```bash
 docker compose ps
-# Expected: postgres (healthy), redis (healthy), qdrant (healthy), api (up), worker (up)
+# Expected: postgres (healthy), redis (healthy), qdrant (healthy), backend (up), worker (up)
 ```
 
 ### Logs
@@ -271,7 +271,7 @@ curl -s http://localhost:8000/api/health | python -m json.tool
 
 ### How tests are structured
 
-Tests live at `api/app/tests/`. The conftest mocks `crewai`, `litellm`, `instructor`, and `langchain_*` modules so **most tests run without a real LLM, Qdrant, or Postgres** — only the adapter contract, API validation rules, registry logic, and worker state machine are verified.
+Tests live at `backend/app/tests/`. The conftest mocks `crewai`, `litellm`, `instructor`, and `langchain_*` modules so **most tests run without a real LLM, Qdrant, or Postgres** — only the adapter contract, API validation rules, registry logic, and worker state machine are verified.
 
 ### Env vars for tests
 
@@ -286,14 +286,14 @@ export JWT_SECRET=test-secret ADMIN_EMAIL=admin@test.com ADMIN_PASSWORD_HASH='$2
 ### Run from host
 
 ```bash
-cd api && pip install -e ".[dev]"
+cd backend && pip install -e ".[dev]"
 python -m pytest app/tests/ -v
 ```
 
 ### Run inside the container
 
 ```bash
-docker compose exec api python -m pytest app/tests/ -v
+docker compose exec backend python -m pytest app/tests/ -v
 ```
 
 ### Run a single test file
@@ -318,7 +318,7 @@ python -m pytest app/tests/test_api_agent_runs.py -v
 ## 8. Testing — Frontend (vitest)
 
 ```bash
-cd web && npm install
+cd frontend && npm install
 ```
 
 ### Run all tests (one-shot)
@@ -399,7 +399,7 @@ Ports already in use on the host:
 | `5432` (postgres) | `export POSTGRES_PORT=5433` in `.env`, or stop the host postgres |
 | `6333` (qdrant) | Stop host Qdrant or remap in `docker-compose.override.yml` |
 | `8000` (fastapi) | Stop host process or remap |
-| `5173` (vite) | Change in `web/vite.config.ts` |
+| `5173` (vite) | Change in `frontend/vite.config.ts` |
 | `80` (nginx) | Requires root or remap in compose |
 
 ### Migrations not applied
@@ -407,25 +407,25 @@ Ports already in use on the host:
 The API container runs `alembic upgrade head` on startup. If it was skipped or the DB was recreated:
 
 ```bash
-docker compose exec api alembic -c alembic.ini upgrade head
+docker compose exec backend alembic -c alembic.ini upgrade head
 ```
 
 To check current migration state:
 
 ```bash
-docker compose exec api alembic -c alembic.ini current
+docker compose exec backend alembic -c alembic.ini current
 ```
 
 ### Frontend can't reach API in dev
 
-The Vite dev server proxies `/api` to `http://api:8000`. Verify:
+The Vite dev server proxies `/api` to `http://backend:8000`. Verify:
 
 ```bash
 docker compose ps api      # must show "running" (not "starting" or "restarting")
 curl http://localhost:8000/api/health  # must return ok
 ```
 
-If the Vite proxy fails, check `web/vite.config.ts` — `proxy: { "/api": "http://api:8000" }`.
+If the Vite proxy fails, check `frontend/vite.config.ts` — `proxy: { "/api": "http://backend:8000" }`.
 
 ### Qdrant data persists across restarts
 
@@ -461,21 +461,21 @@ docker compose down -v                     # stop + remove containers + wipe vol
 docker compose up -d --build               # rebuild image + start
 
 # --- Alembic ---
-docker compose exec api alembic -c alembic.ini current          # show current DB revision
-docker compose exec api alembic -c alembic.ini upgrade head     # apply all migrations
-docker compose exec api alembic -c alembic.ini downgrade -1     # rollback one revision
+docker compose exec backend alembic -c alembic.ini current          # show current DB revision
+docker compose exec backend alembic -c alembic.ini upgrade head     # apply all migrations
+docker compose exec backend alembic -c alembic.ini downgrade -1     # rollback one revision
 
 # --- Backend tests ---
-docker compose exec api python -m pytest app/tests/ -v              # all tests
-docker compose exec api python -m pytest app/tests/ -v -k "auth"    # filter by name
-cd api && python -m pytest app/tests/ -v                            # run on host
+docker compose exec backend python -m pytest app/tests/ -v              # all tests
+docker compose exec backend python -m pytest app/tests/ -v -k "auth"    # filter by name
+cd backend && python -m pytest app/tests/ -v                            # run on host
 
 # --- Frontend ---
-cd web && npm run dev           # Vite HMR on :5173
-cd web && npm run test          # vitest one-shot
-cd web && npm run test:watch    # vitest watch
-cd web && npm run build         # production build check
-cd web && npm run lint          # ESLint
+cd frontend && npm run dev           # Vite HMR on :5173
+cd frontend && npm run test          # vitest one-shot
+cd frontend && npm run test:watch    # vitest watch
+cd frontend && npm run build         # production build check
+cd frontend && npm run lint          # ESLint
 
 # --- Service health ---
 curl -s http://localhost:8000/api/health | python -m json.tool

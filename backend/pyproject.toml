@@ -3,16 +3,16 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "bankai-api"
+name = "bankai-backend"
 version = "0.1.0"
-description = "BankAI API — FastAPI backend for bank statement analysis"
+description = "BankAI backend — FastAPI service for bank statement analysis"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [{name = "BankAI Team"}]
 
 [project.scripts]
-bankai-api = "app.main:app"
+bankai-backend = "app.main:app"
 
 [tool.setuptools.packages.find]
 include = ["app*"]

@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-20  
 **Status:** Approved
-**Layout note (2026-11-07):** Structure simplification superseded frozen `backend/` paths. Canonical skills live in `skills/` with per-harness copies synced by `scripts/sync_skills.py`. CrewAI notebook: `notebooks/ai_agent_skills_dev.ipynb`.  
+**Layout note (2026-11-07):** Canonical skills live in `skills/` with per-harness copies synced by `scripts/sync_skills.py`. CrewAI notebook: `notebooks/ai_agent_skills_dev.ipynb`. Repo-root `backend/` is now the FastAPI service (not the old notebook tree).  
 **Related:** Bank-statement automation, CrewAI baseline, Agent Skills (agentskills.io)
 
 ## Problem

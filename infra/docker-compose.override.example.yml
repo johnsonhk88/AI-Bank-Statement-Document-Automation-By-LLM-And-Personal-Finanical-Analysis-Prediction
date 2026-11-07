@@ -1,13 +1,13 @@
 # Copy to docker-compose.override.yml (gitignored) for local bind-mounts.
 services:
-  api:
+  backend:
     volumes:
-      - ../api:/app/api
+      - ../backend:/app/backend
       - ../skills:/app/skills
       - ../data:/app/data
 
   worker:
     volumes:
-      - ../api:/app/api
+      - ../backend:/app/backend
       - ../skills:/app/skills
       - ../data:/app/data

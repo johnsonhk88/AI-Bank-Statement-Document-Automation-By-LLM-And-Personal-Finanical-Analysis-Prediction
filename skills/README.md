@@ -9,4 +9,4 @@ python scripts/sync_skills.py --apply
 python scripts/sync_skills.py --check
 ```
 
-The production API (`api/app/agents/crewai/adapter.py`) loads this directory directly via `crewai_skills_loader.py`. Harness copies under `agents/*/skills/` are generated — do not edit them by hand.
+The production backend (`backend/app/agents/crewai/adapter.py`) loads this directory directly via `crewai_skills_loader.py`. Harness copies under `agents/*/skills/` are generated — do not edit them by hand.
