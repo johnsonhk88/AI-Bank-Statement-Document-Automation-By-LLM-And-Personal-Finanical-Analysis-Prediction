@@ -5,7 +5,7 @@ This guide walks through **setup, use, and testing** of the parallel agent harne
 | Harness | Path | Best for | LLM required? |
 |---------|------|----------|----------------|
 | **Deep Agents** | `agents/deep-agents/` | First try; offline E2E + tests | No (`--mode pipeline`); yes for `--mode agent` |
-| **CrewAI** | `backend/` + `agents/crewai/` | Existing notebook baseline | Yes (LM Studio / Ollama / cloud) |
+| **CrewAI** | `notebooks/` + `agents/crewai/` | Existing notebook baseline | Yes (LM Studio / Ollama / cloud) |
 | **Hermes** | `agents/hermes/` | Sandboxed CLI agent (Docker) | Yes (via Hermes providers) |
 
 **Shared inputs:** repo `data/` (sample PDFs).  
@@ -22,7 +22,7 @@ This guide walks through **setup, use, and testing** of the parallel agent harne
 - Sample PDF present:
 
 ```text
-data/bank-statement-document/Dummy-Bank-Statement.pdf
+data/samples/Dummy-Bank-Statement.pdf
 ```
 
 ### Deep Agents only
@@ -123,7 +123,7 @@ cd agents/deep-agents
 source .venv/bin/activate
 
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "What amounts appear in the statement?" \
   --mode pipeline
 ```
@@ -172,7 +172,7 @@ cd agents/deep-agents
 source .venv/bin/activate
 
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "Summarize total debits and credits" \
   --mode agent \
   --model ollama:llama3.2
@@ -217,17 +217,17 @@ pip install -r requirements.txt
 ### Run notebook
 
 ```bash
-jupyter notebook backend/app/core/ai_agent_skills_dev.ipynb
+jupyter notebook notebooks/ai_agent_skills_dev.ipynb
 ```
 
-### Live skills vs snapshot
+### Canonical skills vs harness copies
 
 | Location | Role |
 |----------|------|
-| `backend/app/skills/` | **Live** skills used by the notebook + `crewai_skills_loader.py` |
-| `agents/crewai/skills/` | **Snapshot** for side-by-side comparison with other harnesses |
+| `skills/` | **Canonical** skills + `crewai_skills_loader.py` — edit here only |
+| `agents/*/skills/` | **Generated copies** (`python scripts/sync_skills.py --apply`) |
 
-Edit live skills under `backend/app/skills/` until a future migration.
+The production API loads `skills/` directly.
 
 ### LM Studio (recommended for CrewAI)
 
@@ -238,7 +238,7 @@ Edit live skills under `backend/app/skills/` until a future migration.
 ### Optional smoke
 
 ```bash
-python backend/app/skills/crewai_skills_loader.py
+python skills/crewai_skills_loader.py
 ```
 
 Should list loaded skills without error (with project venv active).
@@ -327,7 +327,7 @@ cd agents/deep-agents
 source .venv/bin/activate
 PYTHONPATH=. pytest tests/ -v
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "What amounts appear?" \
   --mode pipeline
 
@@ -354,7 +354,7 @@ test -f ../deep-agents/skills/output-format/SKILL.md && echo deep_agents_skills_
 
 ## 11. Skills reference
 
-Each harness has its **own copy** under `skills/`. Edits **do not** auto-sync.
+Canonical skills live in repo-root `skills/`. Each harness has a **generated copy**. After editing the canonical tree, run `python scripts/sync_skills.py --apply`.
 
 | Skill | Purpose |
 |-------|---------|
@@ -364,8 +364,7 @@ Each harness has its **own copy** under `skills/`. Edits **do not** auto-sync.
 | `rag-query-handling` | Prefer RAG after store |
 | `output-format` | Markdown/JSON discipline |
 
-- Deep Agents / Hermes: agentskills.io-style frontmatter (`name`, `description`).
-- CrewAI live: `backend/app/skills/` may include `compatibility: crewai...`.
+- All skills use agentskills.io-style frontmatter (`name`, `description`) with no CrewAI-only `compatibility` field.
 
 ---
 
@@ -375,7 +374,7 @@ Each harness has its **own copy** under `skills/`. Edits **do not** auto-sync.
 - Deep Agents pipeline uses **offline hash embeddings** (good for smoke tests, not production semantic RAG).
 - Hermes full LLM E2E needs Hermes installed and mounts aligned with the security model.
 - PII redaction focuses on emails, phones, account-like numbers — not full name/address NER.
-- Skill copies can drift; treat each harness tree as independent.
+- Skill copies can drift if edited by hand; `python scripts/sync_skills.py --check` fails on drift.
 
 ---
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO="$(cd "$ROOT/../.." && pwd)"
-PDF_REL="bank-statement-document/Dummy-Bank-Statement.pdf"
+PDF_REL="samples/Dummy-Bank-Statement.pdf"
 PDF_HOST="$REPO/data/$PDF_REL"
 
 "$ROOT/scripts/setup_sandbox.sh"

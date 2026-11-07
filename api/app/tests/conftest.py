@@ -4,13 +4,12 @@ from unittest.mock import MagicMock
 _mock_modules = [
     "crewai",
     "crewai.skills",
+    "crewai_skills_loader",
     "instructor",
     "litellm",
     "langchain_huggingface",
     "langchain_qdrant",
     "langchain_text_splitters",
-    "app.skills",
-    "app.skills.crewai_skills_loader",
 ]
 
 for _mod in _mock_modules:

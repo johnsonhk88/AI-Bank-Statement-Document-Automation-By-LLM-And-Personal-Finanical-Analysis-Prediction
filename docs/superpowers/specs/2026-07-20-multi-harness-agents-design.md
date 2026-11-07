@@ -1,7 +1,8 @@
 # Multi-Harness Agents Design
 
 **Date:** 2026-07-20  
-**Status:** Approved  
+**Status:** Approved
+**Layout note (2026-11-07):** Structure simplification superseded frozen `backend/` paths. Canonical skills live in `skills/` with per-harness copies synced by `scripts/sync_skills.py`. CrewAI notebook: `notebooks/ai_agent_skills_dev.ipynb`.  
 **Related:** Bank-statement automation, CrewAI baseline, Agent Skills (agentskills.io)
 
 ## Problem

@@ -1,6 +1,6 @@
 # ============================================================
 # AI Bank Statement Automation - .gitignore
-# Updated for new project structure (June 2026)
+# Updated for canonical layout (November 2026)
 # ============================================================
 
 # ----------------------
@@ -29,9 +29,10 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-# mlflow db ----------------------
+# mlflow
 mlrun/*
 *mlflow.db
+**/mlruns/
 
 
 # ----------------------
@@ -52,7 +53,6 @@ env/
 # ----------------------
 # Data & Large Files (Important for this project)
 # ----------------------
-api/app/core/*.db
 data/uploads/
 data/processed/
 data/vector_stores/

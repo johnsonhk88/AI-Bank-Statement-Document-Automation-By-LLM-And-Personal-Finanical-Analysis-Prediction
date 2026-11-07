@@ -22,4 +22,4 @@ minversion = "8.0"
 addopts = "-ra -q"
 testpaths = ["app/tests"]
 asyncio_mode = "auto"
-pythonpath = ["."]
+pythonpath = [".", "../skills"]

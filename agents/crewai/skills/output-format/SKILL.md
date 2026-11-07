@@ -1,9 +1,7 @@
 ---
-name: output-format 
+name: output-format
 description: Guidelines for output format structure and requirement.
-compatibility: crewai>=1.0.0
 ---
-
 
 # Output Formatting Skill
 

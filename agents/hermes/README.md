@@ -51,4 +51,4 @@ If `hermes` is not installed, `run_e2e.sh` still validates Docker/config and wri
 
 ## Skills
 
-Copied under `./skills/` (agentskills.io). Independent from CrewAI/Deep Agents copies.
+Copied under `./skills/` from repo-root `skills/` (`python scripts/sync_skills.py --apply`). Do not edit the copy by hand.

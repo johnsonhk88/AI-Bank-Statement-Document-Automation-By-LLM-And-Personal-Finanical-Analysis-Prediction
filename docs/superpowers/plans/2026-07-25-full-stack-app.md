@@ -1,5 +1,7 @@
 # Full-Stack App Implementation Plan
 
+> **Layout note (2026-11-07):** Structure simplification superseded `backend/` / PEP 420 namespace paths. See `docs/superpowers/specs` layout notes and repo-root `skills/`. Historical steps below are a snapshot of how v1 was built.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
 **Goal:** Build a full-stack bank-statement agent wrapper (FastAPI + React + Postgres + Qdrant + Celery) while keeping all experiment code untouched.

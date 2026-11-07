@@ -1,5 +1,7 @@
 # Multi-Harness Agents Implementation Plan
 
+> **Layout note (2026-11-07):** Structure simplification superseded `backend/` skill paths. Canonical skills: `skills/`. Sync: `python scripts/sync_skills.py --apply`. Historical steps below are a snapshot of how the harnesses were scaffolded.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Scaffold parallel `agents/{crewai,deep-agents,hermes}/` harnesses with per-framework skill copies, separate Deep Agents venv + E2E runner, and Docker-sandboxed Hermes E2E against shared `data/`.

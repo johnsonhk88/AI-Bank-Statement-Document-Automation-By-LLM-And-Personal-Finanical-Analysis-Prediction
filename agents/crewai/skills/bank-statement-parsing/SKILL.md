@@ -1,13 +1,12 @@
 ---
 name: bank-statement-parsing
 description: Guidelines for parsing bank statements using YOLO layout detection + OCR + LLM.
-compatibility: crewai>=1.0.0
 ---
 
 # Bank Statement Parsing Skill
 
 ## Core Rules
-- Always start by calling the `PDF Extractor` tool.
+- Always start by extracting text from the PDF.
 - Do **not** trust "Paid In" / "Paid Out" column headers when they are ambiguous.
 - **Verify every transaction** by checking how the running Balance changes:
   - If Balance **increases** → Credit (Paid In)

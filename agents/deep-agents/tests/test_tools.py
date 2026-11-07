@@ -25,7 +25,7 @@ def test_redact_pii_hyphenated_account():
 
 
 def test_extract_pdf_text_reads_sample(tmp_path: Path):
-    sample = Path(__file__).resolve().parents[3] / "data" / "bank-statement-document" / "Dummy-Bank-Statement.pdf"
+    sample = Path(__file__).resolve().parents[3] / "data" / "samples" / "Dummy-Bank-Statement.pdf"
     if not sample.exists():
         # minimal synthetic pdf via pymupdf
         import fitz

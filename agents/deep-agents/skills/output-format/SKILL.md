@@ -3,7 +3,6 @@ name: output-format
 description: Guidelines for output format structure and requirement.
 ---
 
-
 # Output Formatting Skill
 
 ## Rules

@@ -24,7 +24,7 @@ This guide walks through **setup, running, and testing** the full-stack v1 appli
 - **Docker Engine** + **Docker Compose v2** (`docker compose` subcommand, not `docker-compose`)
 - **Node.js 20+** (for running the frontend dev server locally; optional if using prod profile only)
 - **Python 3.11+** (for running backend tests on the host; optional if testing inside the container)
-- Sample PDF: `data/bank-statement-document/Dummy-Bank-Statement.pdf` (already in the repo; used for smoke testing)
+- Sample PDF: `data/samples/Dummy-Bank-Statement.pdf` (already in the repo; used for smoke testing)
 
 ### Optional — LLM provider
 
@@ -186,7 +186,7 @@ curl -s http://localhost:8000/api/llm-models | python -m json.tool | head -30
 ```bash
 DOC_RESP=$(curl -s -X POST http://localhost:8000/api/documents \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@../data/bank-statement-document/Dummy-Bank-Statement.pdf")
+  -F "file=@../data/samples/Dummy-Bank-Statement.pdf")
 echo "$DOC_RESP" | python -m json.tool
 # Save the document ID
 DOC_ID=$(echo "$DOC_RESP" | python -c "import sys,json; print(json.load(sys.stdin)['id'])")

@@ -5,7 +5,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker layer caching
-# Copy requirements first to leverage Docker layer caching
 COPY api/requirements.txt /app/api/requirements.txt
 
 # Install GPU-enabled PyTorch wheel that matches the host's CUDA installation.
@@ -20,6 +19,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy code after installing deps so code changes don't bust the requirements layer
 COPY api/ /app/api/
-COPY backend/ /app/backend/
+COPY skills/ /app/skills/
 COPY data/ /app/data/
-ENV PYTHONPATH=/app:/app/backend
+ENV PYTHONPATH=/app/api:/app/skills

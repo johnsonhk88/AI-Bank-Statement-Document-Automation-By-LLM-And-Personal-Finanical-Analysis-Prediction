@@ -2,18 +2,16 @@
 
 **Full guide:** [docs/guides/multi-harness-agents-guide.md](../../docs/guides/multi-harness-agents-guide.md) (section CrewAI)
 
-Phase 1 keeps the working baseline in:
+- Notebook: `notebooks/ai_agent_skills_dev.ipynb`
+- Canonical skills: `skills/` (repo root) + `skills/crewai_skills_loader.py`
+- This folder's `skills/` is a **generated copy**. Edit the root `skills/` tree, then `python scripts/sync_skills.py --apply`.
 
-- Notebook: `backend/app/core/ai_agent_skills_dev.ipynb`
-- Skills (live): `backend/app/skills/`
-- Loader: `backend/app/skills/crewai_skills_loader.py`
-
-This folder holds a **skills snapshot** under `skills/` for side-by-side comparison with Deep Agents and Hermes. Prefer editing `backend/app/skills/` for the live CrewAI path until a later migration.
+The production API (`api/app/agents/crewai/adapter.py`) loads canonical `skills/` directly.
 
 ## Run baseline
 
 From repo root, with the project venv that has `crewai==1.14.7`:
 
 ```bash
-jupyter notebook backend/app/core/ai_agent_skills_dev.ipynb
+jupyter notebook notebooks/ai_agent_skills_dev.ipynb
 ```

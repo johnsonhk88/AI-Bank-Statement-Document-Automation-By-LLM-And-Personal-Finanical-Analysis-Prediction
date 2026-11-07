@@ -1,7 +1,6 @@
 ---
 name: financial-analysis
 description: Guidelines for income/expense categorization, trend analysis, and generating financial insights.
-compatibility: crewai>=1.0.0
 ---
 
 # Financial Analysis Skill

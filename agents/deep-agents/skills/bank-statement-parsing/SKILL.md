@@ -6,7 +6,7 @@ description: Guidelines for parsing bank statements using YOLO layout detection 
 # Bank Statement Parsing Skill
 
 ## Core Rules
-- Always start by calling the `pdf_extract` tool.
+- Always start by extracting text from the PDF.
 - Do **not** trust "Paid In" / "Paid Out" column headers when they are ambiguous.
 - **Verify every transaction** by checking how the running Balance changes:
   - If Balance **increases** → Credit (Paid In)

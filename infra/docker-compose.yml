@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -81,7 +79,7 @@ services:
       - "8000:8000"
     command: >
       sh -c "cd /app/api && alembic -c alembic.ini upgrade head &&
-             uvicorn api.app.main:app --host 0.0.0.0 --port 8000 --reload"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   worker:
     build:
@@ -121,7 +119,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     command: >
-      sh -c "cd /app/api && celery -A api.app.worker.celery_app worker --loglevel=info --concurrency=2"
+      sh -c "cd /app/api && celery -A app.worker.celery_app worker --loglevel=info --concurrency=2"
 
   web:
     build:

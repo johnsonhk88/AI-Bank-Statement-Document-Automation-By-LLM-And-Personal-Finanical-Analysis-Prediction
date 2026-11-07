@@ -23,7 +23,7 @@ PYTHONPATH=. pytest tests/ -v
 
 ```bash
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "What amounts appear in the statement?" \
   --mode pipeline
 ```
@@ -34,10 +34,10 @@ Requires a local/remote model reachable by the deepagents model string (needs `l
 
 ```bash
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "Summarize total debits and credits" \
   --mode agent \
   --model ollama:llama3.2
 ```
 
-Skills live in `./skills/`. Outputs go to `./workspace/` (gitignored).
+Skills live in `./skills/` (synced from repo-root `skills/` via `python scripts/sync_skills.py --apply`). Outputs go to `./workspace/` (gitignored).

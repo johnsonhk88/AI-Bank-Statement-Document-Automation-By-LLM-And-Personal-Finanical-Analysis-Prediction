@@ -59,67 +59,39 @@ When using **local models** via LM Studio or Ollama:
 
 ```text
 AI-Bank-Statement-Document-Automation/
-├── agents/                              # Multi-harness agents (experimental)
-│   ├── README.md
-│   ├── crewai/                          # Skills snapshot + pointer to baseline
-│   ├── deep-agents/                     # deepagents SDK, tools, tests, E2E
-│   │   ├── run_e2e.py
-│   │   ├── agent.py
-│   │   ├── tools/
-│   │   ├── skills/
-│   │   └── tests/
-│   └── hermes/                          # Docker-sandboxed Hermes profile
-│       ├── config.yaml
-│       ├── scripts/
-│       └── skills/
-├── api/                                 # FastAPI backend (full-stack v1)
-│   ├── app/
-│   │   ├── agents/                      # Agent adapters (CrewAI, DeepAgents)
-│   │   │   ├── crewai/
-│   │   │   └── registry.py
-│   │   ├── api/                         # REST endpoints (auth, llm, documents, agent_runs)
-│   │   ├── core/                        # Security (JWT + bcrypt), deps
-│   │   ├── db/                          # SQLAlchemy session + models
-│   │   ├── models/                      # SQLAlchemy ORM models
-│   │   ├── schemas/                     # Pydantic v2 request/response schemas
-│   │   ├── tests/                       # pytest + pytest-asyncio
-│   │   ├── worker/                      # Celery tasks + runner
-│   │   ├── config.py                    # pydantic-settings env loader
-│   │   └── main.py                      # FastAPI application entrypoint
-│   ├── alembic/                         # Database migrations
-│   ├── config/                          # LLM provider catalog (YAML)
-│   └── requirements.txt                 # Pinned API dependencies
-├── backend/
-│   └── app/
-│       ├── core/
-│       │   └── ai_agent_skills_dev.ipynb   # CrewAI main notebook
-│       └── skills/                         # Live CrewAI skills (shared via namespace pkg)
-│           ├── bank-statement-parsing/
-│           ├── financial-analysis/
-│           ├── pii-handling/
-│           ├── rag-query-handling/
-│           └── output-format/
-├── infra/                               # Docker compose + Kubernetes manifests
-│   ├── api.Dockerfile                   # API & Worker image
-│   ├── docker-compose.yml               # PostgreSQL, Redis, Qdrant, API, Worker, Web
-│   ├── docker-compose.override.yml      # Dev bind-mounts
-│   ├── .env.example                     # Environment template
-│   └── k8s/
-├── web/                                 # React 18 + Vite 5 SPA
+├── api/                                 # Production FastAPI backend
+│   ├── app/                             # Normal Python package (app.*)
+│   │   ├── agents/                      # Adapters (CrewAI live; Deep Agents / Hermes stubs)
+│   │   ├── api/                         # REST: auth, llm, documents, agent_runs
+│   │   ├── core/                        # JWT + bcrypt, storage
+│   │   ├── db/ models/ schemas/
+│   │   ├── tests/
+│   │   └── worker/                      # Celery tasks + runner
+│   ├── alembic/
+│   └── config/llm_providers.yaml
+├── web/                                 # Production React 18 + Vite 5 SPA
+├── infra/                               # Docker compose + Dockerfiles
+├── skills/                              # Canonical domain skills (edit here only)
+│   ├── bank-statement-parsing/
+│   ├── financial-analysis/
+│   ├── pii-handling/
+│   ├── rag-query-handling/
+│   ├── output-format/
+│   └── crewai_skills_loader.py
+├── agents/                              # Experimental harnesses (each has a synced skills/ copy)
+│   ├── crewai/
+│   ├── deep-agents/
+│   └── hermes/
+├── scripts/sync_skills.py               # Copy skills/ → agents/*/skills (--apply / --check)
 ├── data/
-│   ├── bank-statement-document/         # Sample PDFs (e.g. Dummy-Bank-Statement.pdf)
-│   ├── uploads/
-│   └── ...
-├── docs/
-│   ├── guides/
-│   │   ├── multi-harness-agents-guide.md
-│   │   └── full-stack-app-guide.md
-│   └── superpowers/
-│       ├── specs/                       # Design docs
-│       └── plans/                       # Implementation plans
-├── requirements.txt                     # Root / CrewAI stack
+│   ├── samples/Dummy-Bank-Statement.pdf
+│   └── bank-statement-document/         # Extra TemplateLab samples
+├── notebooks/                           # Experiments (CrewAI notebook, YOLO layout)
+├── docs/guides/
 └── README.md
 ```
+
+**Skills policy:** edit `skills/`, then run `python scripts/sync_skills.py --apply`. Do not edit harness copies by hand. The API loads `skills/` directly.
 
 ---
 
@@ -129,7 +101,7 @@ Parallel frameworks for the same bank-statement workflow. Shared inputs live in 
 
 | Harness | Path | Skills | How to run |
 |---------|------|--------|------------|
-| **CrewAI** (baseline) | `backend/app/core/` + `agents/crewai/` | CrewAI Skills | Jupyter notebook |
+| **CrewAI** (baseline) | `notebooks/ai_agent_skills_dev.ipynb` + `agents/crewai/` | CrewAI Skills | Jupyter notebook |
 | **Deep Agents** | `agents/deep-agents/` | agentskills.io | Local `.venv` + `run_e2e.py` |
 | **Hermes** | `agents/hermes/` | agentskills.io | Hermes CLI + **Docker** only |
 
@@ -143,7 +115,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 PYTHONPATH=. pytest tests/ -v
 PYTHONPATH=. python run_e2e.py \
-  --pdf ../../data/bank-statement-document/Dummy-Bank-Statement.pdf \
+  --pdf ../../data/samples/Dummy-Bank-Statement.pdf \
   --question "What amounts appear in the statement?" \
   --mode pipeline
 ```
@@ -182,7 +154,7 @@ pip install -r requirements.txt
 ### 3. Run the main CrewAI notebook
 
 ```bash
-jupyter notebook backend/app/core/ai_agent_skills_dev.ipynb
+jupyter notebook notebooks/ai_agent_skills_dev.ipynb
 ```
 
 ### 4. Or try multi-harness agents
@@ -302,25 +274,24 @@ cd infra && DOCKER_BUILDKIT=1 docker compose --profile prod up -d --build
 docker compose exec api python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
 
-> **Note:** Experiment code in `backend/`, `agents/`, `frontend/streamlit_app/`, `notebooks/`, `yolo-base-layout-analysis/` is untouched by v1.
+> **Note:** Experiments live under `notebooks/` and `agents/`. Production code is `api/` + `web/` + `infra/` + `skills/`.
 
 ### Developer notes
 
-- **Namespace packages:** `api/app/__init__.py` is deliberately absent — `app/` is a [PEP 420](https://peps.python.org/pep-0420/) implicit namespace package. Python automatically merges `api/app/` and `backend/app/` so `app.skills` resolves from `backend/app/skills/` without symlinks.
+- **`app` is a normal package:** `api/app/__init__.py` exists. Containers set `PYTHONPATH=/app/api:/app/skills` so `from app...` and `from crewai_skills_loader import load_skills` both work.
+- **Skills:** edit `skills/` only, then `python scripts/sync_skills.py --apply`. The API does not depend on harness copies.
 - **passlib / bcrypt:** The Docker image pins `bcrypt<4.1` because passlib 1.7.4 is incompatible with bcrypt ≥ 4.1 (`bcrypt.__about__` removed). If upgrading passlib, retest login flow.
 - **Qdrant healthcheck** uses `/proc/net/tcp` instead of `curl` because the `qdrant/qdrant` minimal image ships without curl or wget.
-- **Worker CWD:** The worker service must `cd /app/api` before starting Celery (`PYTHONPATH` alone doesn't add the api directory to Python's import search path for absolute `app.*` imports).
+- **Worker CWD:** The worker service `cd /app/api` then runs `celery -A app.worker.celery_app`.
 
 ---
 
 ## Roadmap
 
-- Production FastAPI backend (harness-selectable)
+- Wire Deep Agents and Hermes adapters into the live API (CrewAI is the only enabled harness today)
 - Multi-document collections / workspaces
 - Advanced financial forecasting
-- Docker + Kubernetes deployment
-- Improved Streamlit dashboard with charts
-- Shared skill sync tooling across harnesses
+- Kubernetes deployment
 - Stronger PII (names/addresses) and production embeddings for Deep Agents
 
 ---

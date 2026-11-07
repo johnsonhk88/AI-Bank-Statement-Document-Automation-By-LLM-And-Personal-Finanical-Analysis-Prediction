@@ -1,16 +1,11 @@
-import sys
-from pathlib import Path
 from uuid import UUID
 
 from crewai import Agent, Crew, LLM, Process, Task
+from crewai_skills_loader import load_skills
 
 from app.agents.base import AgentResult, BaseAgentAdapter
 from app.agents.crewai.extractor import extract_transactions
 from app.agents.llm_provider import LLMProviderRegistry
-
-BACKEND = Path(__file__).resolve().parent.parent.parent.parent.parent / "backend"
-sys.path.insert(0, str(BACKEND))
-from app.skills.crewai_skills_loader import load_skills  # noqa: E402
 
 
 class CrewAIAdapter(BaseAgentAdapter):
